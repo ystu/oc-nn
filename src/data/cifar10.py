@@ -24,7 +24,7 @@ from numpy import linalg as LA
 
 from keras.optimizers import RMSprop
 
-PROJECT_DIR = "/content/drive/My Drive/2019/testing/oc-nn/"
+PROJECT_DIR = "/content/drive/My Drive/Colab_Notebooks/oc-nn"
 
 
 from keras.callbacks import Callback
