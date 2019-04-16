@@ -27,8 +27,8 @@ sys.path.append(PROJECT_DIR)
 # In[5]:
 
 
-get_ipython().run_line_magic('reload_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# get_ipython().run_line_magic('reload_ext', 'autoreload')
+# get_ipython().run_line_magic('autoreload', '2')
 from src.models.RCAE import RCAE_AD
 import numpy as np 
 from src.config import Configuration as Cfg
