@@ -76,13 +76,13 @@ class MNIST_DataLoader(DataLoader):
 
         Cfg.n_batches = int(np.ceil(self.n_train * 1. / Cfg.batch_size))
 
-        self.data_path = "/content/drive/My Drive/Colab_Notebooks/oc-nn/data/mnist/"
+        self.data_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/data/mnist/"
 
         self.on_memory = True
         Cfg.store_on_gpu = True
         # print("Inside the MNIST_DataLoader RCAE.RESULT_PATH:", RCAE_AD.RESULT_PATH)
-        self.rcae_results = "/content/drive/My Drive/Colab_Notebooks/oc-nn/reports/figures/MNIST/RCAE/"
-        self.modelsave_path = "/content/drive/My Drive/Colab_Notebooks/oc-nn/models/MNIST/RCAE/"
+        self.rcae_results = "/home/ubuntu-ai/anomaly_detection/oc-nn/reports/figures/MNIST/RCAE/"
+        self.modelsave_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/models/MNIST/RCAE/"
 
         print("Inside the MNIST_DataLoader RCAE.RESULT_PATH:", self.rcae_results)
 

@@ -23,7 +23,7 @@ import numpy as np
 
 from src.data.main import load_dataset
 
-PROJECT_DIR = "/content/drive/My Drive/Colab_Notebooks/oc-nn"
+PROJECT_DIR = "/home/ubuntu-ai/anomaly_detection/oc-nn"
 
 class RCAE_AD:
     ## Initialise static variables
