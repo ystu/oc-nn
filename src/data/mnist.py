@@ -120,6 +120,8 @@ class MNIST_DataLoader(DataLoader):
 
         print("[INFO: ] Loading data...")
 
+        print("hihi")
+
 
 
         X = load_mnist_images('%strain-images-idx3-ubyte.gz' %
