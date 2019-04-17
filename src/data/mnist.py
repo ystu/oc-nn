@@ -129,7 +129,7 @@ class MNIST_DataLoader(DataLoader):
         y_test = load_mnist_labels('%st10k-labels-idx1-ubyte.gz' %
                                    self.data_path)
 
-        print('X_test : ' + X_test);
+        #print('X_test : ' + X_test);
         print('y_test : ' + y_test);
 
         if Cfg.ad_experiment:
