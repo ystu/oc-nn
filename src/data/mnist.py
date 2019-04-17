@@ -120,10 +120,6 @@ class MNIST_DataLoader(DataLoader):
 
         print("[INFO: ] Loading data...")
 
-        print("hihi")
-
-
-
         X = load_mnist_images('%strain-images-idx3-ubyte.gz' %
                               self.data_path)
         y = load_mnist_labels('%strain-labels-idx1-ubyte.gz' %
@@ -132,6 +128,9 @@ class MNIST_DataLoader(DataLoader):
                                    self.data_path)
         y_test = load_mnist_labels('%st10k-labels-idx1-ubyte.gz' %
                                    self.data_path)
+
+        print('X_test : ' + X_test);
+        print('y_test : ' + y_test);
 
         if Cfg.ad_experiment:
 
