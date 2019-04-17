@@ -303,24 +303,24 @@ def extract_norm_and_out(X, y, normal, outlier):
     # Reshape to fit the new architecture of autoencoder
     X = np.reshape(X,(len(X),X.shape[3],X.shape[2],X.shape[1]))
     y = np.reshape(y,(len(y)))
-    # print("[INFO:] THe shape of X is ",X.shape)
-    # print("[INFO:] THe shape of y is ", y.shape)
-    # print(y[0:100])
+    print("[INFO:] THe shape of X is ",X.shape)
+    print("[INFO:] THe shape of y is ", y.shape)
+    print(y[0:100])
 
 
     idx_normal = np.any(y[..., None] == np.array(normal)[None, ...], axis=1)
     idx_outlier = np.any(y[..., None] == np.array(outlier)[None, ...], axis=1)
 
-    # print("[INFO] : The idx_normal is: ", idx_normal)
-    # print("[INFO] : The idx_outlier is: ", idx_outlier)
+    print("[INFO] : The idx_normal is: ", idx_normal)
+    print("[INFO] : The idx_outlier is: ", idx_outlier)
 
     X_normal = X[idx_normal]
     y_normal = np.zeros(np.sum(idx_normal), dtype=np.uint8)
 
 
 
-    # print("[INFO] : The shape of X is: ", X.shape)
-    # print("[INFO] : The shape of y is: ", y.shape)
+    print("[INFO] : The shape of X is: ", X.shape)
+    print("[INFO] : The shape of y is: ", y.shape)
 
     X_outlier = X[idx_outlier]
     # y_outlier = -1*np.ones(np.sum(idx_outlier), dtype=np.uint8)
@@ -329,8 +329,8 @@ def extract_norm_and_out(X, y, normal, outlier):
 
 
 
-    # print("[INFO] : The shape of X_normal is: ", X_normal.shape)
-    # print("[INFO] : The shape of X_outlier is: ", X_outlier.shape)
+    print("[INFO] : The shape of X_normal is: ", X_normal.shape)
+    print("[INFO] : The shape of X_outlier is: ", X_outlier.shape)
 
     return X_normal, X_outlier, y_normal, y_outlier
 

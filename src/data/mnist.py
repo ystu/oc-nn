@@ -129,8 +129,8 @@ class MNIST_DataLoader(DataLoader):
         y_test = load_mnist_labels('%st10k-labels-idx1-ubyte.gz' %
                                    self.data_path)
 
-        #print('X_test : ' + X_test);
-        print('y_test : ' + y_test);
+        # print('X_test : ' + X_test);
+        # print('y_test : ' + y_test);
 
         if Cfg.ad_experiment:
 
@@ -149,8 +149,8 @@ class MNIST_DataLoader(DataLoader):
                 outliers.remove(Cfg.mnist_normal)
             else:
                 outliers.append(Cfg.mnist_outlier)
-                print("[INFO:] The  label  of outlier  points are ", Cfg.mnist_outlier)
-                print("[INFO:] The  number of outlier  points are ", len(outliers))
+                # print("[INFO:] The  label  of outlier  points are ", Cfg.mnist_outlier)
+                # print("[INFO:] The  number of outlier  points are ", len(outliers))
             
             print("[INFO:] The  label  of normal points are ", Cfg.mnist_normal)
             # extract normal and anomalous class
