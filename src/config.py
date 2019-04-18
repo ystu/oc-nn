@@ -75,6 +75,14 @@ class Configuration(object):
     gcn = True
     zca_whitening = False
 
+    # cb inductance dataset parameters
+    cbinductancetop_val_frac = 1./6
+    cbinductancetop_bias = True
+    cbinductancetop_rep_dim = 32
+    cbinductancetop_architecture = 1  # choose one of the implemented architectures
+    cbinductancetop_normal = 0 ##  1
+    cbinductancetop_outlier = -1
+
     # MNIST dataset parameters
     mnist_val_frac = 1./6
     mnist_bias = True

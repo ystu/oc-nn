@@ -73,6 +73,12 @@ class RCAE_AD:
         load_dataset(self, dataset.lower(), self.pretrain)
 
         # Depending on the dataset build respective autoencoder architecture
+        if (dataset.lower() == "cbinductancetop"):
+            from src.data.cbinductancetop import CbInudctanceTop_DataLoader
+            # Create the robust cae for the dataset passed
+            self.nn_model = CbInudctanceTop_DataLoader()
+            self.mnist_savedModelPath= PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
+
         if (dataset.lower() == "mnist"):
             from src.data.mnist import MNIST_DataLoader
             # Create the robust cae for the dataset passed
@@ -337,6 +343,8 @@ class RCAE_AD:
             num_of_anomalies = int(0.1 * len(X_trainPOS))
         elif(self.dataset == "gtsrb"):
             num_of_anomalies = int(0.1 * len(X_trainPOS))
+        elif(self.dataset == "cbinductancetop"):
+            num_of_anomalies = int(0.1 * len(X_trainPOS))
         
         X_trainNEG = X_trainNEG[0:num_of_anomalies]
         y_trainNEG = y_trainNEG[0:num_of_anomalies]
@@ -457,7 +465,11 @@ class RCAE_AD:
             X_train,y_train = self.get_oneClass_trainData()
             #testing data
             X_test,y_test = self.get_oneClass_trainData()
-             
+
+        elif (self.dataset == "cbinductancetop"):
+            X_train,y_train = self.get_oneClass_trainData()
+            #testing data
+            X_test,y_test = self.get_oneClass_trainData()
         
         elif (RCAE_AD.DATASET == "gtsrb"):
 
@@ -505,10 +517,10 @@ class RCAE_AD:
         # debug_visualise_anamolies_detected(X_test, X_test, X_test, X_test, best_top10_keys, worst_top10_keys, 0.0)
         # exit()
         # define lamda set
-        lamda_set = [0.0, 0.5, 1.0,  100.0]
+        # lamda_set = [0.0, 0.5, 1.0,  100.0]
         # lamda_set = [0.0,  0.5]
         
-        # lamda_set = [0.0]
+        lamda_set = [0.0]
         # lamda_set = [0.5]
         # mue = 0.0
         # TRIALS = 2

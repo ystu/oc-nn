@@ -1,1 +1,1 @@
-implemented_datasets = ('mnist', 'cifar10', 'gtsrb')
+implemented_datasets = ('cbinductancetop', 'mnist', 'cifar10', 'gtsrb')

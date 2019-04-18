@@ -1,4 +1,5 @@
 from src.data.__local__ import implemented_datasets
+from src.data.cbinductancetop import CbInudctanceTop_DataLoader
 from src.data.mnist import MNIST_DataLoader
 from src.data.cifar10 import CIFAR_10_DataLoader
 from src.data.GTSRB import GTSRB_DataLoader
@@ -7,6 +8,8 @@ from src.data.GTSRB import GTSRB_DataLoader
 def load_dataset(learner, dataset_name, pretrain=False):
 
     assert dataset_name in implemented_datasets
+    if dataset_name == "cbinductancetop":
+        data_loader = CbInudctanceTop_DataLoader
 
     if dataset_name == "mnist":
         data_loader = MNIST_DataLoader

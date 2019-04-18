@@ -21,6 +21,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_score
 from skimage import io
 from numpy import linalg as LA
+import cv2, glob, os
+
 
 from keras.optimizers import RMSprop
 
@@ -55,17 +57,18 @@ class RcaeParamSaver(Callback):
 
 
 
-class MNIST_DataLoader(DataLoader):
+
+class CbInudctanceTop_DataLoader(DataLoader):
 
     mean_square_error_dict= {}
     def __init__(self):
 
         DataLoader.__init__(self)
 
-        self.dataset_name = "mnist"
-        self.n_train = 50000
-        self.n_val = 10000
-        self.n_test = 10000
+        self.dataset_name = "cbinductancetop"
+        self.n_train = 75
+        self.n_val = 34
+        self.n_test = 35
 
         self.seed = Cfg.seed
 
@@ -76,15 +79,15 @@ class MNIST_DataLoader(DataLoader):
 
         Cfg.n_batches = int(np.ceil(self.n_train * 1. / Cfg.batch_size))
 
-        self.data_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/data/mnist/"
+        self.data_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/data/CbInductanceTop/"
 
         self.on_memory = True
         Cfg.store_on_gpu = True
         # print("Inside the MNIST_DataLoader RCAE.RESULT_PATH:", RCAE_AD.RESULT_PATH)
-        self.rcae_results = "/home/ubuntu-ai/anomaly_detection/oc-nn/reports/figures/MNIST/RCAE/"
-        self.modelsave_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/models/MNIST/RCAE/"
+        self.rcae_results = "/home/ubuntu-ai/anomaly_detection/oc-nn/reports/figures/CbInductanceTop/RCAE/"
+        self.modelsave_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/models/CbInductanceTop/RCAE/"
 
-        print("Inside the MNIST_DataLoader RCAE.RESULT_PATH:", self.rcae_results)
+        print("Inside the CbInductanceTop_DataLoader RCAE.RESULT_PATH:", self.rcae_results)
 
 
         # load data from disk
@@ -120,14 +123,11 @@ class MNIST_DataLoader(DataLoader):
 
         print("[INFO: ] Loading data...")
 
-        X = load_mnist_images('%strain-images-idx3-ubyte.gz' %
-                              self.data_path)
-        y = load_mnist_labels('%strain-labels-idx1-ubyte.gz' %
-                              self.data_path)
-        X_test = load_mnist_images('%st10k-images-idx3-ubyte.gz' %
-                                   self.data_path)
-        y_test = load_mnist_labels('%st10k-labels-idx1-ubyte.gz' %
-                                   self.data_path)
+        # load data from cb indutance image
+
+        X, y = load_cbinductancetop_ImageLabel('%strain/' % self.data_path)
+
+        X_test, y_test = load_cbinductancetop_ImageLabel('%stest/' % self.data_path)
 
         print("[INFO:] The shape of input X is  ", X.shape)
         print("[INFO:] The shape of input y is  ", y.shape)
@@ -140,18 +140,18 @@ class MNIST_DataLoader(DataLoader):
             normal = []
             outliers = []
 
-            if Cfg.mnist_normal == -1:
-                normal = list(range(0, 10))
-                normal.remove(Cfg.mnist_outlier)
+            if Cfg.cbinductancetop_normal == -1:
+                normal = list(range(0, 2))
+                normal.remove(Cfg.cbinductancetop_outlier)
             else:
-                normal.append(Cfg.mnist_normal)
+                normal.append(Cfg.cbinductancetop_normal)
 
-            if Cfg.mnist_outlier == -1:
-                outliers = list(range(0, 10))
-                outliers.remove(Cfg.mnist_normal)
+            if Cfg.cbinductancetop_outlier == -1:
+                outliers = list(range(0, 2))
+                outliers.remove(Cfg.cbinductancetop_normal)
             else:
-                outliers.append(Cfg.mnist_outlier)
-                print("[INFO:] The  label  of outlier  points are ", Cfg.mnist_outlier)
+                outliers.append(Cfg.cbinductancetop_outlier)
+                print("[INFO:] The  label  of outlier  points are ", Cfg.cbinductancetop_outlier)
                 print("[INFO:] The  number of outlier  points are ", len(outliers))
             
             print("[INFO:] The  label  of normal points are ", Cfg.mnist_normal)
@@ -163,8 +163,8 @@ class MNIST_DataLoader(DataLoader):
             n_norm = len(y_norm)
             n_out = int(np.ceil(Cfg.out_frac * n_norm / (1 - Cfg.out_frac)))
             #
-            print("[INFO:] The number of normal data points are ", (n_norm))
-            print("[INFO:] The number of outlier data points are ", (n_out))
+            # print("[INFO:] The number of normal data points are ", (n_norm))
+            # print("[INFO:] The number of outlier data points are ", (n_out))
 
 
             # shuffle to obtain random validation splits
@@ -181,8 +181,8 @@ class MNIST_DataLoader(DataLoader):
             X_norm_Training = X_norm[perm_norm[n_norm_split:]]
             X_out_Training = X_out[perm_out[:n_out][n_out_split:]]
 
-            print("[INFO:] The shape of Normal used in training+validation ", X_norm_Training.shape)
-            print("[INFO:] The shape of Outlier used in training+validation ", X_out_Training.shape)
+            # print("[INFO:] The shape of Normal used in training+validation ", X_norm_Training.shape)
+            # print("[INFO:] The shape of Outlier used in training+validation ", X_out_Training.shape)
 
 
             self._X_train = np.concatenate((X_norm[perm_norm[n_norm_split:]],
@@ -492,7 +492,7 @@ class MNIST_DataLoader(DataLoader):
 
         # initialize the model
         autoencoder = Sequential()
-        inputShape = (28, 28, 1)
+        inputShape = (1280, 960, 1)
         chanDim = -1 # since depth is appearing the end
         # first set of CONV => RELU => POOL layers
         autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
@@ -678,8 +678,8 @@ class MNIST_DataLoader(DataLoader):
         self.cae.compile(loss=self.custom_rcae_loss(), optimizer=opt)
 
         self.lamda[0] = lamda
-        X_N = np.reshape(X_N, (len(X_N), 28,28,1))
-        Xclean = np.reshape(Xclean, (len(Xclean), 28, 28, 1))
+        X_N = np.reshape(X_N, (len(X_N), 1280, 960,1))
+        Xclean = np.reshape(Xclean, (len(Xclean), 1280, 960,1))
 
         history = self.cae.fit(X_N, X_N,
                                           epochs=150,
@@ -711,7 +711,7 @@ class MNIST_DataLoader(DataLoader):
         return ae_output
 
     def compute_softhreshold(self,Xtrue, N, lamda,Xclean):
-        Xtrue = np.reshape(Xtrue, (len(Xtrue), 784))
+        Xtrue = np.reshape(Xtrue, (len(Xtrue), 1228800))
         print
         "lamda passed ", lamda
         # inner loop for softthresholding
@@ -959,6 +959,57 @@ class MNIST_DataLoader(DataLoader):
 
 
 
+
+def load_cbinductancetop_images(path):
+    images = [cv2.imread(file, cv2.IMREAD_GRAYSCALE) for file in glob.glob(path + "*.bmp")]
+    npImages = np.array(images)
+    npImages = npImages.reshape(-1, 1, 960,1280).astype(np.float32)
+
+    return npImages
+
+def load_cbinductancetop_labels(path):
+    listLabels = []
+    for f in os.listdir(path):
+        print(f)
+        # empty txt file means it's ok
+        if(f.endswith(".txt")):
+            if(os.stat(path + f).st_size == 0):
+                listLabels.append(0)
+                # print("[debug:] 0 " + f)
+            else:
+                # means it's ng
+                listLabels.append(1)
+                # print("[debug:] 1 " + f)
+
+    npLabels = np.array(listLabels)
+    return npLabels
+
+def load_cbinductancetop_ImageLabel(path):
+    dictImage = {}
+    dictLabel = {}
+    for f in os.listdir(path):
+        if (f.endswith(".txt")):
+            # empty txt file means it's ok product
+            if (os.stat(path + f).st_size == 0):
+                dictLabel[f.split('.')[0]] = 0
+            else:
+                dictLabel[f.split('.')[0]] = 1
+        elif(f.endswith(".bmp")):
+            dictImage[f.split('.')[0]] = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
+
+    # combine image and label
+    X = []
+    y = []
+    for key in dictImage.keys():
+        # print(str(dictLabel[key]) + " " + key)
+        X.append(dictImage[key])
+        y.append(dictLabel[key])
+
+    X = np.array(X)
+    X = X.reshape(-1, 1, 960, 1280).astype(np.float32)
+    y = np.array(y)
+
+    return X, y
 
 
 def load_mnist_images(filename):
