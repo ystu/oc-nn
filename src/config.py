@@ -14,7 +14,7 @@ class Configuration(object):
     nn_solver = "sgd"
 
     # Optimization
-    batch_size = 200
+    batch_size = 1
     learning_rate = floatX(1e-4)
     # learning_rate = theano.shared(floatX(1e-4), name="learning rate")
     lr_decay = False

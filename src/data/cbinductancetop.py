@@ -28,8 +28,13 @@ from keras.optimizers import RMSprop
 
 
 from keras.callbacks import Callback
+import tensorflow as tf
+# 只使用 X% 的 GPU 記憶體
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
+sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
-
+# 設定 Keras 使用的 TensorFlow Session
+tf.keras.backend.set_session(sess)
 
 
 
@@ -61,13 +66,13 @@ class RcaeParamSaver(Callback):
 class CbInudctanceTop_DataLoader(DataLoader):
 
     mean_square_error_dict= {}
-    def __init__(self):
+    def __init__(self, height, width, resolution):
 
         DataLoader.__init__(self)
 
         self.dataset_name = "cbinductancetop"
-        self.n_train = 75
-        self.n_val = 34
+        self.n_train = 109
+        self.n_val = 0
         self.n_test = 35
 
         self.seed = Cfg.seed
@@ -91,7 +96,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
 
         # load data from disk
-        self.load_data()
+        self.load_data(height=height, width=width, resolution=resolution)
 
         ## Rcae parameters
         self.mue = 0.1
@@ -102,6 +107,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
         self.latent_weights = [0,0,0]
         self.batchNo=0
         self.index = 0
+        self.height = height;
+        self.width = width;
         # Pretrain the DCAE autoencoder
         # self.pretrain_autoencoder()
 
@@ -119,15 +126,15 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # store primal variables on RAM
         assert Cfg.store_on_gpu
 
-    def load_data(self, original_scale=False,):
+    def load_data(self, height, width, resolution, original_scale=False,):
 
         print("[INFO: ] Loading data...")
 
         # load data from cb indutance image
 
-        X, y = load_cbinductancetop_ImageLabel('%strain/' % self.data_path)
+        X, y = load_cbinductancetop_ImageLabel('%strain_%s/' % (self.data_path, resolution), height, width)
 
-        X_test, y_test = load_cbinductancetop_ImageLabel('%stest/' % self.data_path)
+        X_test, y_test = load_cbinductancetop_ImageLabel('%stest_%s/' % (self.data_path, resolution), height, width)
 
         print("[INFO:] The shape of input X is  ", X.shape)
         print("[INFO:] The shape of input y is  ", y.shape)
@@ -282,7 +289,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         N = self.Noise
         lambda_val = self.lamda[0]
         mue = self.mue
-        batch_size = 128
+        batch_size = 1
         # batch_size = 128
         # for index in range(0, N.shape[0], batch_size):
         #     batch = N[index:min(index + batch_size, N.shape[0]), :]
@@ -695,8 +702,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         ae_output = self.cae.predict(X_N)
         #Reshape it back to 784 pixels
-        ae_output = np.reshape(ae_output, (len(ae_output), 784))
-        Xclean = np.reshape(Xclean, (len(Xclean), 784))
+        ae_output = np.reshape(ae_output, (len(ae_output), 122880))
+        Xclean = np.reshape(Xclean, (len(Xclean), 122880))
 
         np_mean_mse =  np.mean(mean_squared_error(Xclean,ae_output))
         #Compute L2 norm during training and take the average of mse as threshold to set the label
@@ -710,18 +717,18 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         return ae_output
 
-    def compute_softhreshold(self,Xtrue, N, lamda,Xclean):
-        Xtrue = np.reshape(Xtrue, (len(Xtrue), 1228800))
+    def compute_softhreshold(self,Xtrue, N, lamda, Xclean):
+        Xtrue = np.reshape(Xtrue, (len(Xtrue), self.height * self.width))
         print
         "lamda passed ", lamda
         # inner loop for softthresholding
         for i in range(0, 1):
             X_N = Xtrue - N
-            XAuto = self.fit_auto_conv_AE(X_N,Xtrue,lamda)  # XAuto is the predictions on train set of autoencoder
+            XAuto = self.fit_auto_conv_AE(X_N, Xtrue, lamda)  # XAuto is the predictions on train set of autoencoder
             XAuto = np.asarray(XAuto)
             # print "XAuto:",type(XAuto),XAuto.shape
             softThresholdIn = Xtrue - XAuto
-            softThresholdIn = np.reshape(softThresholdIn, (len(softThresholdIn), 784))
+            softThresholdIn = np.reshape(softThresholdIn, (len(softThresholdIn), self.height * self.width))
             N = self.soft_threshold(lamda, softThresholdIn)
             print("Iteration NUmber is : ", i)
             print("NUmber of non zero elements  for N,lamda", np.count_nonzero(N), lamda)
@@ -903,7 +910,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
             YTrue = y_train
 
             # Capture the structural Noise
-            self.compute_softhreshold(XTrue, N, lamda, XTrue)
+            self.compute_softhreshold(XTrue, N, lamda, XTrue, dimension=self)
             N = self.Noise
             # Predict the conv_AE autoencoder output
             # XTrue = np.reshape(XTrue, (len(XTrue), 28, 28, 1))
@@ -957,34 +964,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         return
 
-
-
-
-def load_cbinductancetop_images(path):
-    images = [cv2.imread(file, cv2.IMREAD_GRAYSCALE) for file in glob.glob(path + "*.bmp")]
-    npImages = np.array(images)
-    npImages = npImages.reshape(-1, 1, 960,1280).astype(np.float32)
-
-    return npImages
-
-def load_cbinductancetop_labels(path):
-    listLabels = []
-    for f in os.listdir(path):
-        print(f)
-        # empty txt file means it's ok
-        if(f.endswith(".txt")):
-            if(os.stat(path + f).st_size == 0):
-                listLabels.append(0)
-                # print("[debug:] 0 " + f)
-            else:
-                # means it's ng
-                listLabels.append(1)
-                # print("[debug:] 1 " + f)
-
-    npLabels = np.array(listLabels)
-    return npLabels
-
-def load_cbinductancetop_ImageLabel(path):
+def load_cbinductancetop_ImageLabel(path, height, width):
     dictImage = {}
     dictLabel = {}
     for f in os.listdir(path):
@@ -994,7 +974,7 @@ def load_cbinductancetop_ImageLabel(path):
                 dictLabel[f.split('.')[0]] = 0
             else:
                 dictLabel[f.split('.')[0]] = 1
-        elif(f.endswith(".bmp")):
+        elif(f.endswith(".bmp") or f.endswith(".jpg")):
             dictImage[f.split('.')[0]] = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
 
     # combine image and label
@@ -1006,7 +986,7 @@ def load_cbinductancetop_ImageLabel(path):
         y.append(dictLabel[key])
 
     X = np.array(X)
-    X = X.reshape(-1, 1, 960, 1280).astype(np.float32)
+    X = X.reshape(-1, 1, height, width).astype(np.float32)
     y = np.array(y)
 
     return X, y

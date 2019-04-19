@@ -17,6 +17,9 @@ sess = tf.Session()
 
 from keras import backend as K
 K.tensorflow_backend._get_available_gpus()
+gpu_options = tf.GPUOptions(allow_growth=True)
+sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+tf.keras.backend.set_session(sess)
 
 K.set_session(sess)
 
@@ -67,6 +70,7 @@ class RCAE_AD:
         self.kvar = 0.0
         self.pretrain= True
         self.dataset = dataset.lower()
+        self.resolution = str(img_wdt) + 'x' + str(img_hgt)
         
         print("INFO: The dataset is ",self.dataset)
         # load dataset
@@ -76,14 +80,14 @@ class RCAE_AD:
         if (dataset.lower() == "cbinductancetop"):
             from src.data.cbinductancetop import CbInudctanceTop_DataLoader
             # Create the robust cae for the dataset passed
-            self.nn_model = CbInudctanceTop_DataLoader()
-            self.mnist_savedModelPath= PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
+            self.nn_model = CbInudctanceTop_DataLoader(img_hgt, img_wdt, self.resolution)
+            self.mnist_savedModelPath = PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
 
         if (dataset.lower() == "mnist"):
             from src.data.mnist import MNIST_DataLoader
             # Create the robust cae for the dataset passed
             self.nn_model = MNIST_DataLoader()
-            self.mnist_savedModelPath= PROJECT_DIR+"/models/MNIST/RCAE/"
+            self.mnist_savedModelPath = PROJECT_DIR+"/models/MNIST/RCAE/"
 
 
         # Depending on the dataset build respective autoencoder architecture
@@ -155,9 +159,10 @@ class RCAE_AD:
 
     def load_data(self, data_loader=None, pretrain=False):
 
-        self.data = data_loader()
+        # self.data = data_loader()
+        self.data = data_loader(self.IMG_HGT, self.IMG_WDT, self.resolution)
         return
-    
+
     def scale_to_unit_interval(self,ndar, eps=1e-8):
         """ Scales all values in the ndarray ndar to be between 0 and 1 """
         ndar = ndar.copy()
