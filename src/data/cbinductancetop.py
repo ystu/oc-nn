@@ -28,13 +28,13 @@ from keras.optimizers import RMSprop
 
 
 from keras.callbacks import Callback
-import tensorflow as tf
-# 只使用 X% 的 GPU 記憶體
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
-sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-
-# 設定 Keras 使用的 TensorFlow Session
-tf.keras.backend.set_session(sess)
+# import tensorflow as tf
+# # 只使用 X% 的 GPU 記憶體
+# gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
+# sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+#
+# # 設定 Keras 使用的 TensorFlow Session
+# tf.keras.backend.set_session(sess)
 
 
 
@@ -103,7 +103,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         self.lamda = [0.01]
         self.Noise = np.zeros(len(self._X_train))
         self.anomaly_threshold= 0.0
-        self.cae = self.build_autoencoder()
+        self.cae = self.build_autoencoder(height=height, width=width)
         self.latent_weights = [0,0,0]
         self.batchNo=0
         self.index = 0
@@ -495,11 +495,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
     #     return autoencoder
 
     # Build lenet style autoencoder
-    def build_autoencoder(self):
+    def build_autoencoder(self, height, width):
 
         # initialize the model
         autoencoder = Sequential()
-        inputShape = (1280, 960, 1)
+        inputShape = (width, height, 1)
         chanDim = -1 # since depth is appearing the end
         # first set of CONV => RELU => POOL layers
         autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
@@ -674,7 +674,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         return y_pred
 
-    def fit_auto_conv_AE(self,X_N,Xclean,lamda):
+    def fit_auto_conv_AE(self,X_N,Xclean,lamda, height, width):
 
         # print("[INFO:] Lenet Style Autoencoder summary",autoencoder.summary())
 
@@ -685,8 +685,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
         self.cae.compile(loss=self.custom_rcae_loss(), optimizer=opt)
 
         self.lamda[0] = lamda
-        X_N = np.reshape(X_N, (len(X_N), 1280, 960,1))
-        Xclean = np.reshape(Xclean, (len(Xclean), 1280, 960,1))
+        X_N = np.reshape(X_N, (len(X_N), width, height,1))
+        Xclean = np.reshape(Xclean, (len(Xclean), width, height,1))
 
         history = self.cae.fit(X_N, X_N,
                                           epochs=150,
@@ -702,8 +702,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         ae_output = self.cae.predict(X_N)
         #Reshape it back to 784 pixels
-        ae_output = np.reshape(ae_output, (len(ae_output), 122880))
-        Xclean = np.reshape(Xclean, (len(Xclean), 122880))
+        ae_output = np.reshape(ae_output, (len(ae_output), width * height))
+        Xclean = np.reshape(Xclean, (len(Xclean), width * height))
 
         np_mean_mse =  np.mean(mean_squared_error(Xclean,ae_output))
         #Compute L2 norm during training and take the average of mse as threshold to set the label
@@ -724,7 +724,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # inner loop for softthresholding
         for i in range(0, 1):
             X_N = Xtrue - N
-            XAuto = self.fit_auto_conv_AE(X_N, Xtrue, lamda)  # XAuto is the predictions on train set of autoencoder
+            XAuto = self.fit_auto_conv_AE(X_N, Xtrue, lamda, width=self.width, height=self.height)  # XAuto is the predictions on train set of autoencoder
             XAuto = np.asarray(XAuto)
             # print "XAuto:",type(XAuto),XAuto.shape
             softThresholdIn = Xtrue - XAuto
@@ -910,7 +910,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
             YTrue = y_train
 
             # Capture the structural Noise
-            self.compute_softhreshold(XTrue, N, lamda, XTrue, dimension=self)
+            self.compute_softhreshold(XTrue, N, lamda, XTrue, self.width * self.height)
             N = self.Noise
             # Predict the conv_AE autoencoder output
             # XTrue = np.reshape(XTrue, (len(XTrue), 28, 28, 1))
