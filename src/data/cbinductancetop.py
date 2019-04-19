@@ -507,8 +507,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # autoencoder.add(BatchNormalization(axis=chanDim))
         # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-        # autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
-        autoencoder.add(Conv2D(20, (5, 5), padding="same"))
+        autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
+        # autoencoder.add(Conv2D(20, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
