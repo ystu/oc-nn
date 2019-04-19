@@ -34,8 +34,8 @@ import numpy as np
 from src.config import Configuration as Cfg
 
 DATASET = "CbInductanceTop"
-IMG_HGT = 240 # 960  480  240  28
-IMG_WDT= 320 # 1280  640  320  28
+IMG_HGT = 56 # 960  480  240  28
+IMG_WDT= 56 # 1280  640  320  28
 IMG_DIM = IMG_HGT * IMG_WDT
 IMG_CHANNEL = 1
 HIDDEN_LAYER_SIZE = 4 #32

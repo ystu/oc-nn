@@ -502,7 +502,13 @@ class CbInudctanceTop_DataLoader(DataLoader):
         inputShape = (width, height, 1)
         chanDim = -1 # since depth is appearing the end
         # first set of CONV => RELU => POOL layers
-        autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
+        # autoencoder.add(Conv2D(10, (5, 5), padding="same",input_shape=inputShape))
+        # autoencoder.add(Activation("relu"))
+        # autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+        # autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
+        autoencoder.add(Conv2D(20, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
@@ -522,8 +528,6 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
-
-
         autoencoder.add(Dense(2450))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
@@ -535,11 +539,18 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
 
-        autoencoder.add(Conv2D(20, (5, 5), padding="same",
-                               input_shape=inputShape))
+        # autoencoder.add(Conv2D(20, (5, 5), padding="same", input_shape=inputShape))
+        autoencoder.add(Conv2D(20, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
+
+        ########### add by sam
+        autoencoder.add(Conv2D(10, (5, 5), padding="same", input_shape=inputShape))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(UpSampling2D(size=(2, 2)))
+        ##########
 
         autoencoder.add(Conv2D(1, (5, 5), use_bias=True, padding='same'))
         autoencoder.add(Activation('sigmoid'))
@@ -564,11 +575,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
     def compute_mse(self,Xclean, Xdecoded, lamda):
         # print len(Xdecoded)
-        Xclean = np.reshape(Xclean, (len(Xclean), 784))
+        Xclean = np.reshape(Xclean, (len(Xclean), self.width))
         m, n = Xclean.shape
         Xdecoded = np.reshape(np.asarray(Xdecoded), (m, n))
         # print Xdecoded.shape
-        Xdecoded = np.reshape(Xdecoded, (len(Xdecoded), 784))
+        Xdecoded = np.reshape(Xdecoded, (len(Xdecoded), self.width))
 
         print("[INFO:] Xclean  MSE Computed shape", Xclean.shape)
 
@@ -617,11 +628,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
     def compute_best_worst_rank(self,testX, Xdecoded):
         # print len(Xdecoded)
 
-        testX = np.reshape(testX, (len(testX), 784))
+        testX = np.reshape(testX, (len(testX), self.width * self.height))
         m, n = testX.shape
         Xdecoded = np.reshape(np.asarray(Xdecoded), (m, n))
         # print Xdecoded.shape
-        Xdecoded = np.reshape(Xdecoded, (len(Xdecoded), 784))
+        Xdecoded = np.reshape(Xdecoded, (len(Xdecoded), self.width * self.height))
 
         # Rank the images by reconstruction error
         anamolies_dict = {}
@@ -739,9 +750,9 @@ class CbInudctanceTop_DataLoader(DataLoader):
         return N
 
     def visualise_anamolies_detected(self,testX, noisytestX, decoded, N, best_top10_keys, worst_top10_keys, lamda):
-        side = 28
+        side = self.width
         channel = 1
-        N = np.reshape(N, (len(N), 28,28,1))
+        N = np.reshape(N, (len(N), self.width, self.height, 1))
         # Display the decoded Original, noisy, reconstructed images
         print("side:", side)
         print("channel:", channel)

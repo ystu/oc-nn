@@ -147,9 +147,9 @@ class RCAE_AD:
 
         top_100_anomalies = np.asarray(top_100_anomalies)
 
-        top_100_anomalies = np.reshape(top_100_anomalies,(len(top_100_anomalies),28,28))
+        top_100_anomalies = np.reshape(top_100_anomalies,(len(top_100_anomalies),self.IMG_HGT,self.IMG_WDT)) # 28
         
-        result = self.tile_raster_images(top_100_anomalies, [28, 28], [10, 10])
+        result = self.tile_raster_images(top_100_anomalies, [self.IMG_HGT,self.IMG_WDT], [10, 10]) # 28
         print("[INFO:] Saving Anomalies Found at ..",self.results)
         io.imsave(self.results  + str(lamda)+"_Top100_anomalies.png",result)
 
