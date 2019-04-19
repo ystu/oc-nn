@@ -432,7 +432,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
+        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
 
         return 
     
@@ -451,7 +451,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
+        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
 
         return 
 
@@ -575,6 +575,10 @@ class RCAE_AD:
             elif(self.dataset == "gtsrb"):
                 decoded = np.reshape(decoded, (len(decoded), 3072))
                 X_test_for_roc = np.reshape(X_test, (len(X_test), 3072))
+
+            elif (self.dataset == "cbinductancetop"):
+                decoded = np.reshape(decoded, (len(decoded), self.IMG_WDT * self.IMG_HGT))
+                X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
                 
             recErr = ((decoded - X_test_for_roc) ** 2).sum(axis = 1)
             

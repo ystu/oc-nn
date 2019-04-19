@@ -132,9 +132,9 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         # load data from cb indutance image
 
-        X, y = load_cbinductancetop_ImageLabel('%strain_%s/' % (self.data_path, resolution), height, width)
+        X, y = load_cbinductancetop_ImageLabel('%strain/' % (self.data_path), height, width)
 
-        X_test, y_test = load_cbinductancetop_ImageLabel('%stest_%s/' % (self.data_path, resolution), height, width)
+        X_test, y_test = load_cbinductancetop_ImageLabel('%stest/' % (self.data_path), height, width)
 
         print("[INFO:] The shape of input X is  ", X.shape)
         print("[INFO:] The shape of input y is  ", y.shape)
@@ -161,7 +161,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
                 print("[INFO:] The  label  of outlier  points are ", Cfg.cbinductancetop_outlier)
                 print("[INFO:] The  number of outlier  points are ", len(outliers))
             
-            print("[INFO:] The  label  of normal points are ", Cfg.mnist_normal)
+            print("[INFO:] The  label  of normal points are ", Cfg.cbinductancetop_normal)
             # extract normal and anomalous class
             
             X_norm, X_out, y_norm, y_out = extract_norm_and_out(X,y, normal=normal, outlier=outliers)
@@ -181,8 +181,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
             perm_out = np.random.permutation(len(y_out))
 
             # split into training and validation set
-            n_norm_split = int(Cfg.mnist_val_frac * n_norm)
-            n_out_split = int(Cfg.mnist_val_frac * n_out)
+            n_norm_split = int(Cfg.cbinductancetop_val_frac * n_norm)
+            n_out_split = int(Cfg.cbinductancetop_val_frac * n_out)
 
 
             X_norm_Training = X_norm[perm_norm[n_norm_split:]]
@@ -577,11 +577,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
         meanSq_error = mean_squared_error(Xclean, Xdecoded)
         print("[INFO:] MSE Computed shape", meanSq_error.shape)
 
-        MNIST_DataLoader.mean_square_error_dict.update({lamda: meanSq_error})
+        CbInudctanceTop_DataLoader.mean_square_error_dict.update({lamda: meanSq_error})
         print("\n Mean square error Score ((Xclean, Xdecoded):")
-        print(MNIST_DataLoader.mean_square_error_dict.values())
+        print(CbInudctanceTop_DataLoader.mean_square_error_dict.values())
 
-        return MNIST_DataLoader.mean_square_error_dict
+        return CbInudctanceTop_DataLoader.mean_square_error_dict
 
     # Function to compute softthresholding values
     def soft_threshold(self,lamda, b):
@@ -975,7 +975,9 @@ def load_cbinductancetop_ImageLabel(path, height, width):
             else:
                 dictLabel[f.split('.')[0]] = 1
         elif(f.endswith(".bmp") or f.endswith(".jpg")):
-            dictImage[f.split('.')[0]] = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
+            resize_img = cv2.resize(img, (height, width))
+            dictImage[f.split('.')[0]] = resize_img
 
     # combine image and label
     X = []
