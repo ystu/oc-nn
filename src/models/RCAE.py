@@ -284,7 +284,7 @@ class RCAE_AD:
         # Just 0.01 points are the number of anomalies.
         
         # Just 0.01 points are the number of anomalies
-        if(self.dataset == "mnist"):
+        if(self.dataset == "mnist" or self.dataset == "cbinductancetop"):
             num_of_anomalies = int(0.01 * len(X_testPOS))
         elif(self.dataset == "cifar10"):
             num_of_anomalies = int(0.1 * len(X_testPOS))
@@ -342,13 +342,11 @@ class RCAE_AD:
         y_trainNEG = np.concatenate((trainYNeg, testYNeg))
         
         # Just 0.01 points are the number of anomalies.
-        if(self.dataset == "mnist"):
+        if(self.dataset == "mnist" or self.dataset == "cbinductancetop"):
             num_of_anomalies = int(0.01 * len(X_trainPOS))
         elif(self.dataset == "cifar10"):
             num_of_anomalies = int(0.1 * len(X_trainPOS))
         elif(self.dataset == "gtsrb"):
-            num_of_anomalies = int(0.1 * len(X_trainPOS))
-        elif(self.dataset == "cbinductancetop"):
             num_of_anomalies = int(0.1 * len(X_trainPOS))
         
         X_trainNEG = X_trainNEG[0:num_of_anomalies]
@@ -416,6 +414,11 @@ class RCAE_AD:
             img = np.reshape(img, (side * nrows, side * ncols))
             print('Saving Top-200'+ str(lamda) + "most anomalous digit: @")
             io.imsave(self.results + str(lamda)  + 'Class_'+ str(Cfg.mnist_normal) + "_Top100.png", img)
+        if(self.dataset == "cbinductancetop"):
+            # Save the image decoded
+            img = np.reshape(img, (side * nrows, side * ncols))
+            print('Saving Top-200' + str(lamda) + "most anomalous digit: @")
+            io.imsave(self.results + str(lamda) + 'Class_' + str(Cfg.cbinductancetop_normal) + "_Top100.png", img)
 
         return
     
@@ -432,7 +435,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
+        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
 
         return 
     
@@ -451,7 +454,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
+        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
 
         return 
 

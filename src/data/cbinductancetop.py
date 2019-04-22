@@ -499,6 +499,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         # initialize the model
         autoencoder = Sequential()
+
         inputShape = (width, height, 1)
         chanDim = -1 # since depth is appearing the end
         # first set of CONV => RELU => POOL layers
@@ -528,11 +529,13 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
-        autoencoder.add(Dense(2450))
+        autoencoder.add(Dense(3200))
+        # autoencoder.add(Dense(2450))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
-        autoencoder.add(Reshape((7, 7, 50)))
+        autoencoder.add(Reshape((8, 8, 50)))
+        # autoencoder.add(Reshape((7, 7, 50)))
 
         autoencoder.add(Conv2D(50, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
@@ -985,10 +988,10 @@ def load_cbinductancetop_ImageLabel(path, height, width):
                 dictLabel[f.split('.')[0]] = 0
             else:
                 dictLabel[f.split('.')[0]] = 1
-        elif(f.endswith(".bmp") or f.endswith(".jpg")):
+        elif(f.endswith(".bmp") or f.endswith(".jpg") or f.endswith(".png")):
             img = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
-            resize_img = cv2.resize(img, (height, width))
-            dictImage[f.split('.')[0]] = resize_img
+            # img = cv2.resize(img, (height, width))
+            dictImage[f.split('.')[0]] = img
 
     # combine image and label
     X = []

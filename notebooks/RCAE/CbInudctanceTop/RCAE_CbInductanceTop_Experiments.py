@@ -34,11 +34,11 @@ import numpy as np
 from src.config import Configuration as Cfg
 
 DATASET = "CbInductanceTop"
-IMG_HGT = 56 # 960  480  240  28
-IMG_WDT= 56 # 1280  640  320  28
+IMG_HGT = 64 # 960  480  240  28
+IMG_WDT= 64 # 1280  640  320  28
 IMG_DIM = IMG_HGT * IMG_WDT
 IMG_CHANNEL = 1
-HIDDEN_LAYER_SIZE = 4 #32
+HIDDEN_LAYER_SIZE = 32 #32
 MODEL_SAVE_PATH = PROJECT_DIR + "/models/CbInductanceTop/RCAE/"
 REPORT_SAVE_PATH = PROJECT_DIR + "/reports/figures/CbInductanceTop/RCAE/"
 PRETRAINED_WT_PATH = ""
