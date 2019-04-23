@@ -284,14 +284,15 @@ class RCAE_AD:
         # Just 0.01 points are the number of anomalies.
         
         # Just 0.01 points are the number of anomalies
-        if(self.dataset == "mnist" or self.dataset == "cbinductancetop"):
+        if (self.dataset == "mnist" or self.dataset == "cbinductancetop"):
             num_of_anomalies = int(0.01 * len(X_testPOS))
         elif(self.dataset == "cifar10"):
             num_of_anomalies = int(0.1 * len(X_testPOS))
             
         # num_of_anomalies = int(0.01 * len(X_testPOS))
-        X_testNEG = X_testNEG[0:num_of_anomalies]
-        y_testNEG = y_testNEG[0:num_of_anomalies]
+        # comment by sam
+        # X_testNEG = X_testNEG[0:num_of_anomalies]
+        # y_testNEG = y_testNEG[0:num_of_anomalies]
         
         
         X_test = np.concatenate((X_testPOS, X_testNEG))
@@ -334,27 +335,36 @@ class RCAE_AD:
         testXNeg = X_test[np.where(y_test == 1)]
         testYNeg = np.ones(len(testXNeg))
 
-     
-        X_trainPOS = np.concatenate((trainXPos, testXPos))
-        y_trainPOS = np.concatenate((trainYPos, testYPos))
-        
-        X_trainNEG = np.concatenate((trainXNeg, testXNeg))
-        y_trainNEG = np.concatenate((trainYNeg, testYNeg))
+
+        # comment by sam
+        # X_trainPOS = np.concatenate((trainXPos, testXPos))
+        # y_trainPOS = np.concatenate((trainYPos, testYPos))
+        #
+        # X_trainNEG = np.concatenate((trainXNeg, testXNeg))
+        # y_trainNEG = np.concatenate((trainYNeg, testYNeg))
+
+        X_trainPOS = trainXPos
+        y_trainPOS = trainYPos
+        X_trainNEG = trainXNeg
+        y_trainNEG = trainYNeg
         
         # Just 0.01 points are the number of anomalies.
-        if(self.dataset == "mnist" or self.dataset == "cbinductancetop"):
+        if(self.dataset == "mnist"):
             num_of_anomalies = int(0.01 * len(X_trainPOS))
         elif(self.dataset == "cifar10"):
             num_of_anomalies = int(0.1 * len(X_trainPOS))
         elif(self.dataset == "gtsrb"):
             num_of_anomalies = int(0.1 * len(X_trainPOS))
+        elif(self.dataset == "cbinductancetop"):
+            num_of_anomalies = int(0.01 * len(X_trainPOS))
+
+        # comment by sam
+        # X_trainNEG = X_trainNEG[0:num_of_anomalies]
+        # y_trainNEG = y_trainNEG[0:num_of_anomalies]
         
-        X_trainNEG = X_trainNEG[0:num_of_anomalies]
-        y_trainNEG = y_trainNEG[0:num_of_anomalies]
         
-        
-        X_train = np.concatenate((X_trainPOS, X_trainNEG))
-        y_train = np.concatenate((y_trainPOS, y_trainNEG))
+        # X_train = np.concatenate((X_trainPOS, X_trainNEG))
+        # y_train = np.concatenate((y_trainPOS, y_trainNEG))
         
     
         print("[INFO: ] Shape of One Class Input Data used in training", X_train.shape)
@@ -435,7 +445,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
+        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
 
         return 
     
@@ -454,7 +464,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
+        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
 
         return 
 
@@ -474,10 +484,15 @@ class RCAE_AD:
             #testing data
             X_test,y_test = self.get_oneClass_trainData()
 
-        elif (self.dataset == "cbinductancetop"):
-            X_train,y_train = self.get_oneClass_trainData()
-            #testing data
-            X_test,y_test = self.get_oneClass_trainData()
+        elif(self.dataset == "cbinductancetop"):
+            # X_train, y_train = self.get_oneClass_trainData()
+            # testing data
+            # X_test, y_test = self.get_oneClass_testData()
+            X_train = self.data._X_train
+            y_train = self.data._y_train
+
+            X_test = self.data._X_test
+            y_test = self.data._y_test
         
         elif (RCAE_AD.DATASET == "gtsrb"):
 
@@ -548,9 +563,10 @@ class RCAE_AD:
             self.nn_model.compute_softhreshold(XTrue, N, lamda, XTrue)
             N = self.nn_model.Noise
             
-         
+
+            # decode train data
             decoded = self.nn_model.cae.predict(XTrue)
-             # rank the best and worst reconstructed images
+            # rank the best and worst reconstructed images
             [best_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(XTrue, decoded)
 
             self.nn_model.visualise_anamolies_detected(XTrue, XTrue, decoded, N, best_top10_keys, worst_top10_keys, lamda)
@@ -563,10 +579,19 @@ class RCAE_AD:
             # print("[INFO:] The anomaly threshold computed is ", self.nn_model.anomaly_threshold)
 
             
-            # decoded 
+            # decoded test data
             decoded = self.nn_model.cae.predict(X_test)
             XPred = decoded
-            
+
+            # start by sam
+            [best_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(X_test, decoded)
+
+            # self.nn_model.compute_softhreshold(X_test, 0, lamda, X_test)
+            # N = self.nn_model.Noise
+            self.nn_model.visualise_anamolies_detected_for_test_data(X_test, X_test, decoded, 0, best_top10_keys, worst_top10_keys,
+                                                       lamda)
+            # end by sam
+
             if(self.dataset == "mnist"):
                 decoded = np.reshape(decoded, (len(decoded), 784))
                 X_test_for_roc = np.reshape(X_test, (len(X_test), 784))
@@ -582,13 +607,21 @@ class RCAE_AD:
             elif (self.dataset == "cbinductancetop"):
                 decoded = np.reshape(decoded, (len(decoded), self.IMG_WDT * self.IMG_HGT))
                 X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
-                
-            recErr = ((decoded - X_test_for_roc) ** 2).sum(axis = 1)
-            
-            self.save_Most_Anomalous(X_test,recErr)
-            self.save_Most_Normal(X_test,recErr)
-            
+
+            # calculate accuracy result
+            self.nn_model.anomaly_threshold
+            ae_output = self.cae.predict(X_test)
+            ae_output = np.reshape(ae_output, (len(ae_output), self.IMG_WDT * self.IMG_HGT))
+            X_test_for_verify = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
+            test_data_mse = mean_squared_error(X_test_for_verify, ae_output)
+
+            # roc curve
+            recErr = ((decoded - X_test_for_roc) ** 2).sum(axis=1)
+
+            self.save_Most_Anomalous(X_test, recErr)
+            self.save_Most_Normal(X_test, recErr)
             auc[l] = roc_auc_score(y_test, recErr)
+
             import pandas as pd 
             df = pd.DataFrame(recErr)
             df.to_csv(self.results  +"recErr.csv")

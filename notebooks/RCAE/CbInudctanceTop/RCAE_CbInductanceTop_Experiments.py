@@ -32,6 +32,7 @@ sys.path.append(PROJECT_DIR)
 from src.models.RCAE import RCAE_AD
 import numpy as np 
 from src.config import Configuration as Cfg
+import time
 
 DATASET = "CbInductanceTop"
 IMG_HGT = 64 # 960  480  240  28
@@ -46,7 +47,8 @@ PRETRAINED_WT_PATH = ""
 RANDOM_SEED = [42]
 AUC = []
 
-for seed in RANDOM_SEED:  
+for seed in RANDOM_SEED:
+  startTime = time.time()
   Cfg.seed = seed
   rcae = RCAE_AD(DATASET,IMG_DIM, HIDDEN_LAYER_SIZE, IMG_HGT, IMG_WDT,IMG_CHANNEL, MODEL_SAVE_PATH, REPORT_SAVE_PATH,PRETRAINED_WT_PATH,seed)
   print("Train Data Shape: ",rcae.data._X_train.shape)
@@ -59,6 +61,7 @@ for seed in RANDOM_SEED:
   auc_roc = rcae.fit_and_predict()
   print("========================================================================")
   AUC.append(auc_roc)
+  print("time cost: %d seconds\n" %(time.time() - startTime))
   
 print("===========TRAINING AND PREDICTING WITH DCAE============================")
 print("AUROC computed ", AUC)
@@ -66,6 +69,7 @@ auc_roc_mean = np.mean(np.asarray(AUC))
 auc_roc_std = np.std(np.asarray(AUC))
 print ("AUROC =====", auc_roc_mean ,"+/-",auc_roc_std)
 print("========================================================================")
+
 
 
 # # **RCAE-MNIST 7_Vs_all** 

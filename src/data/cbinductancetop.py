@@ -573,7 +573,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         plt.title('model loss')
         plt.ylabel('loss')
         plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper right')
+        plt.legend(['train', 'valid'], loc='upper right')
         plt.savefig(self.rcae_results+"rcae_")
 
     def compute_mse(self,Xclean, Xdecoded, lamda):
@@ -703,7 +703,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         Xclean = np.reshape(Xclean, (len(Xclean), width, height,1))
 
         history = self.cae.fit(X_N, X_N,
-                                          epochs=150,
+                                          epochs=1, # 150
                                           shuffle=True,
                                           validation_split=0.1,
                                           verbose=1
@@ -715,11 +715,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
         #           run_id="auto_encoder", batch_size=128)
 
         ae_output = self.cae.predict(X_N)
-        #Reshape it back to 784 pixels
+        #Reshape it
         ae_output = np.reshape(ae_output, (len(ae_output), width * height))
         Xclean = np.reshape(Xclean, (len(Xclean), width * height))
 
-        np_mean_mse =  np.mean(mean_squared_error(Xclean,ae_output))
+        np_mean_mse = np.mean(mean_squared_error(Xclean,ae_output))
         #Compute L2 norm during training and take the average of mse as threshold to set the label
         # norm = []
         # for i in range(0, len(input)):
@@ -780,7 +780,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # Save the image decoded
         print("\nSaving results for best after being encoded and decoded: @")
         print(self.rcae_results + '/best/')
-        io.imsave(self.rcae_results  + '/best/' + str(lamda) + 'salt_p_denoising_cae_decode.png', img)
+        io.imsave(self.rcae_results  + '/best_' + str(lamda) + '_salt_p_denoising_cae_decode.png', img)
 
         # Display the decoded Original, noisy, reconstructed images for worst
         img = np.ndarray(shape=(side * 3, side * 10, channel))
@@ -798,7 +798,57 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # Save the image decoded
         print("\nSaving results for worst after being encoded and decoded: @")
         print(self.rcae_results + '/worst/')
-        io.imsave(self.rcae_results + '/worst/' + str(lamda) + 'salt_p_denoising_cae_decode.png', img)
+        io.imsave(self.rcae_results + '/worst_' + str(lamda) + '_salt_p_denoising_cae_decode.png', img)
+
+        return
+
+    def visualise_anamolies_detected_for_test_data(self, testX, noisytestX, decoded, N, best_top10_keys, worst_top10_keys, lamda):
+        side = self.width
+        channel = 1
+        # N = np.reshape(N, (len(N), self.width, self.height, 1))
+        # Display the decoded Original, noisy, reconstructed images
+        print("side:", side)
+        print("channel:", channel)
+        img = np.ndarray(shape=(side * 3, side * 10, channel))
+        print
+        "img shape:", img.shape
+
+        best_top10_keys = list(best_top10_keys)
+        worst_top10_keys = list(worst_top10_keys)
+
+        for i in range(10):
+            row = i // 10 * 3
+            col = i % 10
+            img[side * row:side * (row + 1), side * col:side * (col + 1), :] = testX[best_top10_keys[i]]
+            img[side * (row + 1):side * (row + 2), side * col:side * (col + 1), :] = decoded[best_top10_keys[i]]
+            # img[side * (row + 2):side * (row + 3), side * col:side * (col + 1), :] = N[best_top10_keys[i]]
+            # img[side * (row + 3):side * (row + 4), side * col:side * (col + 1), :] = N[best_top10_keys[i]]
+
+        img *= 255
+        img = img.astype(np.uint8)
+        img = np.reshape(img, (side * 3, side * 10))
+        # Save the image decoded
+        print("\nSaving results for best after being encoded and decoded: @")
+        print(self.rcae_results + '/best/')
+        io.imsave(self.rcae_results  + '/best_' + str(lamda) + '_salt_p_denoising_cae_decode.png', img)
+
+        # Display the decoded Original, noisy, reconstructed images for worst
+        img = np.ndarray(shape=(side * 3, side * 10, channel))
+        for i in range(10):
+            row = i // 10 * 3
+            col = i % 10
+            img[side * row:side * (row + 1), side * col:side * (col + 1), :] = testX[worst_top10_keys[i]]
+            img[side * (row + 1):side * (row + 2), side * col:side * (col + 1), :] = decoded[worst_top10_keys[i]]
+            # img[side * (row + 2):side * (row + 3), side * col:side * (col + 1), :] = N[worst_top10_keys[i]]
+            # img[side * (row + 3):side * (row + 4), side * col:side * (col + 1), :] = N[worst_top10_keys[i]]
+
+        img *= 255
+        img = img.astype(np.uint8)
+        img = np.reshape(img, (side * 3, side * 10))
+        # Save the image decoded
+        print("\nSaving results for worst after being encoded and decoded: @")
+        print(self.rcae_results + '/worst/')
+        io.imsave(self.rcae_results + '/worst_' + str(lamda) + '_salt_p_denoising_cae_decode.png', img)
 
         return
 
