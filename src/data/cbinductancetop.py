@@ -1058,7 +1058,7 @@ def load_cbinductancetop_ImageLabel(path, height, width):
                 dictLabel[f.split('.')[0]] = 1
         elif(f.endswith(".bmp") or f.endswith(".jpg") or f.endswith(".png")):
             img = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
-            img = cv2.resize(img, (height, width))
+            # img = cv2.resize(img, (height, width))
             dictImage[f.split('.')[0]] = img
 
     # combine image and label
