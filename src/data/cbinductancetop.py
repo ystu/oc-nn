@@ -131,10 +131,12 @@ class CbInudctanceTop_DataLoader(DataLoader):
         print("[INFO: ] Loading data...")
 
         # load data from cb indutance image
+        trainDir = "train_" + resolution + "/" # train_64x64  train_1280x960
+        testDir = "test_" + resolution + "/"   # test_64x64  test_1280x960
 
-        X, y = load_cbinductancetop_ImageLabel('%strain/' % (self.data_path), height, width)
+        X, y = load_cbinductancetop_ImageLabel('%s%s' % (self.data_path, trainDir), height, width)
 
-        X_test, y_test = load_cbinductancetop_ImageLabel('%stest/' % (self.data_path), height, width)
+        X_test, y_test = load_cbinductancetop_ImageLabel('%s%s' % (self.data_path, testDir), height, width)
 
         print("[INFO:] The shape of input X is  ", X.shape)
         print("[INFO:] The shape of input y is  ", y.shape)
@@ -280,10 +282,10 @@ class CbInudctanceTop_DataLoader(DataLoader):
     def custom_rcae_loss(self):
 
 
-        U = self.cae.layers[9].get_weights()
+        U = self.cae.layers[13].get_weights() # 9 13
         U = U[0]
 
-        V = self.cae.layers[11].get_weights()
+        V = self.cae.layers[15].get_weights() # 11 15
         V = V[0]
         V = np.transpose(V)
         N = self.Noise
@@ -503,17 +505,19 @@ class CbInudctanceTop_DataLoader(DataLoader):
         inputShape = (width, height, 1)
         chanDim = -1 # since depth is appearing the end
         # first set of CONV => RELU => POOL layers
-        # autoencoder.add(Conv2D(10, (5, 5), padding="same",input_shape=inputShape))
-        # autoencoder.add(Activation("relu"))
-        # autoencoder.add(BatchNormalization(axis=chanDim))
-        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-        autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
-        # autoencoder.add(Conv2D(20, (5, 5), padding="same"))
+        # autoencoder.add(Conv2D(10, (5, 5), padding="same"))
+        autoencoder.add(Conv2D(10, (5, 5), padding="same",input_shape=inputShape))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # second set of CONV => RELU => POOL layers
+
+        # autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
+        autoencoder.add(Conv2D(20, (5, 5), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # # second set of CONV => RELU => POOL layers
+
         autoencoder.add(Conv2D(50, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
@@ -521,11 +525,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # first (and only) set of FC => RELU layers
         autoencoder.add(Flatten())
 
-        autoencoder.add(Dense(2450))
+        autoencoder.add(Dense(3200))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
-        autoencoder.add(Dense(32))
+        autoencoder.add(Dense(128)) # 32  64  128
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
@@ -535,28 +539,38 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(BatchNormalization(axis=chanDim))
 
         autoencoder.add(Reshape((8, 8, 50)))
-        # autoencoder.add(Reshape((7, 7, 50)))
+        # 8x8x50
 
         autoencoder.add(Conv2D(50, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 16x16x50
 
         # autoencoder.add(Conv2D(20, (5, 5), padding="same", input_shape=inputShape))
         autoencoder.add(Conv2D(20, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 32x32x20
 
         ########### add by sam
         autoencoder.add(Conv2D(10, (5, 5), padding="same", input_shape=inputShape))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 64x64x10
+
+        # autoencoder.add(Conv2D(5, (5, 5), padding="same", input_shape=inputShape))
+        # autoencoder.add(Activation("relu"))
+        # autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 128x128x5
         ##########
 
         autoencoder.add(Conv2D(1, (5, 5), use_bias=True, padding='same'))
         autoencoder.add(Activation('sigmoid'))
+
 
 
 
@@ -640,7 +654,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # Rank the images by reconstruction error
         anamolies_dict = {}
         for i in range(0, len(testX)):
-            anamolies_dict.update({i: np.linalg.norm(testX[i] - Xdecoded[i])})
+            # anamolies_dict.update({i: np.linalg.norm(testX[i] - Xdecoded[i])})
+            anamolies_dict.update({i: mean_squared_error(testX[i], Xdecoded[i])})
 
         # Sort the recont error to get the best and worst 10 images
         best_top10_anamolies_dict = {}
@@ -669,7 +684,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
                 worst_top10_anamolies_dict.update({w: anamolies_dict[w]})
         worst_top10_keys = worst_top10_anamolies_dict.keys()
 
-        return [best_top10_keys, worst_top10_keys]
+        return [best_top10_keys, worst_top10_keys, anamolies_dict]
 
     def computePred_Labels(self, X_test, decoded, poslabelBoundary, negBoundary):
 
@@ -703,7 +718,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         Xclean = np.reshape(Xclean, (len(Xclean), width, height,1))
 
         history = self.cae.fit(X_N, X_N,
-                                          epochs=1, # 150
+                                          epochs=150, # 150
                                           shuffle=True,
                                           validation_split=0.1,
                                           verbose=1
@@ -720,6 +735,9 @@ class CbInudctanceTop_DataLoader(DataLoader):
         Xclean = np.reshape(Xclean, (len(Xclean), width * height))
 
         np_mean_mse = np.mean(mean_squared_error(Xclean,ae_output))
+        # np_max_mse = np.max(mean_squared_error(Xclean,ae_output))
+        np_min_mse = np.min(mean_squared_error(Xclean, ae_output))
+
         #Compute L2 norm during training and take the average of mse as threshold to set the label
         # norm = []
         # for i in range(0, len(input)):
@@ -987,7 +1005,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
             # print("[INFO:] The anomaly threshold computed is ", self.anomaly_threshold)
 
             # rank the best and worst reconstructed images
-            [best_top10_keys, worst_top10_keys] = self.compute_best_worst_rank(X_test, decoded)
+            [best_top10_keys, worst_top10_keys, anamolies_dict] = self.compute_best_worst_rank(X_test, decoded)
 
             # Visualise the best and worst ( image, BG-image, FG-Image)
             # XPred = np.reshape(np.asarray(decoded), (len(decoded), 28,28,1))
@@ -1040,7 +1058,7 @@ def load_cbinductancetop_ImageLabel(path, height, width):
                 dictLabel[f.split('.')[0]] = 1
         elif(f.endswith(".bmp") or f.endswith(".jpg") or f.endswith(".png")):
             img = cv2.imread(path + f, cv2.IMREAD_GRAYSCALE)
-            # img = cv2.resize(img, (height, width))
+            img = cv2.resize(img, (height, width))
             dictImage[f.split('.')[0]] = img
 
     # combine image and label

@@ -43,6 +43,9 @@ HIDDEN_LAYER_SIZE = 32 #32
 MODEL_SAVE_PATH = PROJECT_DIR + "/models/CbInductanceTop/RCAE/"
 REPORT_SAVE_PATH = PROJECT_DIR + "/reports/figures/CbInductanceTop/RCAE/"
 PRETRAINED_WT_PATH = ""
+TRAIN_PATH = "train/"
+TEST_PATH = "test/"
+
 # RANDOM_SEED = [42,56,81,67,33,25,90,77,15,11]
 RANDOM_SEED = [42]
 AUC = []
@@ -50,7 +53,7 @@ AUC = []
 for seed in RANDOM_SEED:
   startTime = time.time()
   Cfg.seed = seed
-  rcae = RCAE_AD(DATASET,IMG_DIM, HIDDEN_LAYER_SIZE, IMG_HGT, IMG_WDT,IMG_CHANNEL, MODEL_SAVE_PATH, REPORT_SAVE_PATH,PRETRAINED_WT_PATH,seed)
+  rcae = RCAE_AD(DATASET,IMG_DIM, HIDDEN_LAYER_SIZE, IMG_HGT, IMG_WDT,IMG_CHANNEL, MODEL_SAVE_PATH, REPORT_SAVE_PATH,PRETRAINED_WT_PATH,seed, TRAIN_PATH, TEST_PATH)
   print("Train Data Shape: ",rcae.data._X_train.shape)
   print("Train Label Shape: ",rcae.data._y_train.shape)
   print("Validation Data Shape: ",rcae.data._X_val.shape)

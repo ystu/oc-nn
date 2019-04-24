@@ -4,15 +4,15 @@
 # In[1]:
 
 
-from google.colab import drive
-drive.mount('/content/drive')
-get_ipython().system('pip install picklable_itertools')
-
-get_ipython().system('pip install fuel')
-get_ipython().run_line_magic('matplotlib', 'inline')
-import numpy as np
-get_ipython().run_line_magic('reload_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# from google.colab import drive
+# drive.mount('/content/drive')
+# get_ipython().system('pip install picklable_itertools')
+#
+# get_ipython().system('pip install fuel')
+# get_ipython().run_line_magic('matplotlib', 'inline')
+# import numpy as np
+# get_ipython().run_line_magic('reload_ext', 'autoreload')
+# get_ipython().run_line_magic('autoreload', '2')
 
 PROJECT_DIR = "/content/drive/My Drive/2019/testing/oc-nn/"
 import sys,os
@@ -27,8 +27,8 @@ sys.path.append(PROJECT_DIR)
 
 
 ## Obtaining the training and testing data
-get_ipython().run_line_magic('reload_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# get_ipython().run_line_magic('reload_ext', 'autoreload')
+# get_ipython().run_line_magic('autoreload', '2')
 from src.models.RCAE import RCAE_AD
 import numpy as np 
 from src.config import Configuration as Cfg

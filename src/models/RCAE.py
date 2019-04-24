@@ -29,6 +29,44 @@ from src.data.main import load_dataset
 
 PROJECT_DIR = "/home/ubuntu-ai/anomaly_detection/oc-nn"
 
+
+def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
+    if len(anamolies_dict) != len(y_test):
+        print("[calculateAccuracy] size different!!!")
+        return
+
+    print("anomaly_threshold = %.4f" % anomaly_threshold)
+    total_size = len(anamolies_dict)
+    anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
+    tp = 0
+    fp = 0
+    fn = 0
+    tn = 0
+    for i in range(0, total_size, 1):
+        difference = anamolies_list[i][1] - anomaly_threshold
+        print("anamolies_list[i][1] = %.4f" % anamolies_list[i][1])
+        if difference > 0: # predict ng
+            if y_test[i] == 1:
+                tp += 1 # guess correct
+            else: # predict ok
+                fp += 1 # guess wrong
+        else: # difference < 0 , predict ok
+            if y_test[i] == 0:
+                tn += 1 # guess correct
+            else: # predict ok
+                fn += 1 # guess wrong
+
+    print("======================================")
+    print("tp: %d" %tp)
+    print("fp: %d" %fp)
+    print("fn: %d" %fn)
+    print("tn: %d" %tn)
+    print("accuracy: %.2f" %((tp + tn) / total_size))
+    print("recall: %.2f" % (tp / (tp + fn)))
+    print("precision: %.2f" % (tp / (tp + fp)))
+    print("======================================")
+
+
 class RCAE_AD:
     ## Initialise static variables
     INPUT_DIM = 0
@@ -39,7 +77,7 @@ class RCAE_AD:
 
     def __init__(self, dataset, inputdim, hiddenLayerSize, img_hgt, img_wdt,img_channel, modelSavePath, reportSavePath,
                  preTrainedWtPath, seed, intValue=0, stringParam="defaultValue",
-                 otherParam=None):
+                 otherParam=None, ):
         """
         Called when initializing the classifier
         """
@@ -567,9 +605,9 @@ class RCAE_AD:
             # decode train data
             decoded = self.nn_model.cae.predict(XTrue)
             # rank the best and worst reconstructed images
-            [best_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(XTrue, decoded)
+            [best_top10_keys, worst_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(XTrue, decoded)
 
-            self.nn_model.visualise_anamolies_detected(XTrue, XTrue, decoded, N, best_top10_keys, worst_top10_keys, lamda)
+            # self.nn_model.visualise_anamolies_detected(XTrue, XTrue, decoded, N, best_top10_keys, worst_top10_keys, lamda)
 
             
             
@@ -584,12 +622,11 @@ class RCAE_AD:
             XPred = decoded
 
             # start by sam
-            [best_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(X_test, decoded)
+            [best_top10_keys, worst_top10_keys, anamolies_dict] = self.nn_model.compute_best_worst_rank(X_test, decoded)
 
             # self.nn_model.compute_softhreshold(X_test, 0, lamda, X_test)
             # N = self.nn_model.Noise
-            self.nn_model.visualise_anamolies_detected_for_test_data(X_test, X_test, decoded, 0, best_top10_keys, worst_top10_keys,
-                                                       lamda)
+            self.nn_model.visualise_anamolies_detected_for_test_data(X_test, X_test, decoded, 0, best_top10_keys, worst_top10_keys, lamda)
             # end by sam
 
             if(self.dataset == "mnist"):
@@ -609,11 +646,12 @@ class RCAE_AD:
                 X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
             # calculate accuracy result
-            self.nn_model.anomaly_threshold
-            ae_output = self.cae.predict(X_test)
-            ae_output = np.reshape(ae_output, (len(ae_output), self.IMG_WDT * self.IMG_HGT))
-            X_test_for_verify = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
-            test_data_mse = mean_squared_error(X_test_for_verify, ae_output)
+
+            # ae_output = self.cae.predict(X_test)
+            # ae_output = np.reshape(ae_output, (len(ae_output), self.IMG_WDT * self.IMG_HGT))
+            # X_test_for_verify = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
+            # test_data_mse = mean_squared_error(X_test_for_verify, ae_output)
+            calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold)
 
             # roc curve
             recErr = ((decoded - X_test_for_roc) ** 2).sum(axis=1)

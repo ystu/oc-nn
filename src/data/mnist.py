@@ -528,8 +528,7 @@ class MNIST_DataLoader(DataLoader):
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
 
-        autoencoder.add(Conv2D(20, (5, 5), padding="same",
-                               input_shape=inputShape))
+        autoencoder.add(Conv2D(20, (5, 5), padding="same", input_shape=inputShape))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(UpSampling2D(size=(2, 2)))
@@ -682,7 +681,7 @@ class MNIST_DataLoader(DataLoader):
         Xclean = np.reshape(Xclean, (len(Xclean), 28, 28, 1))
 
         history = self.cae.fit(X_N, X_N,
-                                          epochs=150,
+                                          epochs=1,
                                           shuffle=True,
                                           validation_split=0.1,
                                           verbose=1
