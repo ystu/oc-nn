@@ -64,16 +64,16 @@ for seed in RANDOM_SEED:
     auc_roc = rcae.predict_by_pretrain_model()
   else:
     auc_roc = rcae.fit_and_predict()
-  print("========================================================================")
+      
   AUC.append(auc_roc)
   print("time cost: %d seconds\n" %(time.time() - startTime))
   
-print("===========TRAINING AND PREDICTING WITH DCAE============================")
-print("AUROC computed ", AUC)
-auc_roc_mean = np.mean(np.asarray(AUC))
-auc_roc_std = np.std(np.asarray(AUC))
-print ("AUROC =====", auc_roc_mean ,"+/-",auc_roc_std)
-print("========================================================================")
+# print("===========TRAINING AND PREDICTING WITH DCAE============================")
+# print("AUROC computed ", AUC)
+# auc_roc_mean = np.mean(np.asarray(AUC))
+# auc_roc_std = np.std(np.asarray(AUC))
+# print ("AUROC =====", auc_roc_mean ,"+/-",auc_roc_std)
+# print("========================================================================")
 
 
 

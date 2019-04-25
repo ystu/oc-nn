@@ -32,47 +32,6 @@ from src.data.main import load_dataset
 PROJECT_DIR = "/home/ubuntu-ai/anomaly_detection/oc-nn"
 
 
-def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
-    if len(anamolies_dict) != len(y_test):
-        print("[calculateAccuracy] size different!!!")
-        return
-    worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
-    worstThresholdPercent = 0.2
-    thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent)
-    anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
-    print("anomaly_threshold = %.4f" % anomaly_threshold)
-    total_size = len(anamolies_dict)
-    anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
-    tp = 0
-    fp = 0
-    fn = 0
-    tn = 0
-    for i in range(0, total_size, 1):
-        difference = anamolies_list[i][1] - anomaly_threshold
-        # print("anamolies_list[i][1] = %.4f" % anamolies_list[i][1])
-        if difference > 0: # predict ng
-            if y_test[i] == 1:
-                tp += 1 # guess correct
-            else: # predict ok
-                fp += 1 # guess wrong
-        else: # difference < 0 , predict ok
-            if y_test[i] == 0:
-                tn += 1 # guess correct
-            else: # predict ok
-                fn += 1 # guess wrong
-
-    print("======================================")
-    print("tp (success kill#): %d" %tp)
-    print("fp (over kill#): %d" %fp)
-    print("fn (under kill#): %d" %fn)
-    print("tn (ok product #) %d" %tn)
-    print()
-    print("accuracy: %d %%" %((tp + tn) / total_size * 100))
-    print("underKill: %d %%" % (fn / (total_size) * 100))
-    print("overKill: %d %%" % (fp / (total_size) * 100))
-    print("recall: %d %%" % (tp / (tp + fn) * 100))
-    print("precision: %d %%" % (tp / (tp + fp) * 100))
-    print("======================================")
 
 class RCAE_AD:
     ## Initialise static variables
@@ -562,7 +521,12 @@ class RCAE_AD:
             X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
         # calculate accuracy result
-        calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold)
+        worstThresholdPercent = 30
+        worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
+        thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent / 100)
+        anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
+        print("anomaly_threshold = %.4f" % anomaly_threshold)
+        calculateAccuracy(anamolies_dict, y_test, anomaly_threshold)
 
         # roc curve
         TRIALS = 4
@@ -804,3 +768,41 @@ def debug_visualise_anamolies_detected(testX, noisytestX, decoded, N, best_top10
 
         return
 
+def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
+    if len(anamolies_dict) != len(y_test):
+        print("[calculateAccuracy] size different!!!")
+        return
+
+    total_size = len(anamolies_dict)
+    anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
+    tp = 0
+    fp = 0
+    fn = 0
+    tn = 0
+
+    for i in range(0, total_size, 1):
+        difference = anamolies_list[i][1] - anomaly_threshold
+        # print("anamolies_list[i][1] = %.4f" % anamolies_list[i][1])
+        if difference > 0: # predict ng
+            if y_test[i] == 1:
+                tp += 1 # guess correct
+            else: # predict ok
+                fp += 1 # guess wrong
+        else: # difference < 0 , predict ok
+            if y_test[i] == 0:
+                tn += 1 # guess correct
+            else: # predict ok
+                fn += 1 # guess wrong
+
+    print("======================================")
+    print("tp (success kill#): %d" %tp)
+    print("fp (over kill#): %d" %fp)
+    print("fn (under kill#): %d" %fn)
+    print("tn (ok product #) %d" %tn)
+    print()
+    print("accuracy: %d %%" %((tp + tn) / total_size * 100))
+    print("underKill: %d %%" % (fn / (total_size) * 100))
+    print("overKill: %d %%" % (fp / (total_size) * 100))
+    print("recall: %d %%" % (tp / (tp + fn) * 100))
+    print("precision: %d %%" % (tp / (tp + fp) * 100))
+    print("======================================")
