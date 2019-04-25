@@ -77,6 +77,9 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         self.seed = Cfg.seed
 
+        self.encodeLayerU = 28
+        self.decodeLayerV = 30
+
         if Cfg.ad_experiment:
             self.n_classes = 2
         else:
@@ -282,10 +285,10 @@ class CbInudctanceTop_DataLoader(DataLoader):
     def custom_rcae_loss(self):
 
 
-        U = self.cae.layers[13].get_weights() # 9 13
+        U = self.cae.layers[self.encodeLayerU].get_weights()
         U = U[0]
 
-        V = self.cae.layers[15].get_weights() # 11 15
+        V = self.cae.layers[self.decodeLayerV].get_weights()
         V = V[0]
         V = np.transpose(V)
         N = self.Noise
@@ -504,27 +507,177 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         inputShape = (width, height, 1)
         chanDim = -1 # since depth is appearing the end
+        # 64x64x1
+
+        autoencoder.add(Conv2D(32, (4, 4), padding="same", input_shape=inputShape))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 64x64x32
+
+        autoencoder.add(Conv2D(32, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 32x32x32
+
         # first set of CONV => RELU => POOL layers
+        autoencoder.add(Conv2D(32, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 32x32x32
+
+        autoencoder.add(Conv2D(64, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 16x16x64
+
+        autoencoder.add(Conv2D(64, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 16x16x64
+
+        autoencoder.add(Conv2D(128, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 8x8x128
+
+        autoencoder.add(Conv2D(32, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 8x8x64
+
+        autoencoder.add(Conv2D(32, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 8x8x32
+
+        # autoencoder.add(Conv2D(64, (8, 8), padding="valid"))
+        # autoencoder.add(Activation("relu"))
+        # autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 1x1x3200
+
+
+        # first (and only) set of FC => RELU layers
+        autoencoder.add(Flatten())
+
+        autoencoder.add(Dense(2048))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+
+        autoencoder.add(Dense(1024))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+
+        autoencoder.add(Dense(2048))
+        # autoencoder.add(Dense(2450))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+
+        autoencoder.add(Reshape((8, 8, 32)))
+        # 8x8x32
+
+        autoencoder.add(Conv2D(32, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 8x8x32
+
+        autoencoder.add(Conv2D(64, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 8x8x64
+
+        autoencoder.add(Conv2D(128, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 16x16x128
+
+        autoencoder.add(Conv2D(64, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 16x16x64
+
+        autoencoder.add(Conv2D(32, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 32x32x32
+
+        autoencoder.add(Conv2D(32, (3, 3), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 32x32x32
+
+        autoencoder.add(Conv2D(32, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 64x64x32
+
+        # autoencoder.add(Conv2D(20, (5, 5), padding="same", input_shape=inputShape))
+        autoencoder.add(Conv2D(1, (4, 4), padding="same"))
+        autoencoder.add(Activation("relu"))
+        autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(UpSampling2D(size=(2, 2)))
+        # 64x64x1
+
+        # autoencoder.add(Conv2D(1, (4, 4), use_bias=True, padding='same'))
+        autoencoder.add(Activation('sigmoid'))
+
+        return autoencoder
+
+    # Build lenet style autoencoder
+    def build_autoencoder_origin(self, height, width):
+
+        # initialize the model
+        autoencoder = Sequential()
+
+        inputShape = (width, height, 1)
+        chanDim = -1 # since depth is appearing the end
+
+        # autoencoder.add(Conv2D(10, (5, 5), padding="same"))
+        # autoencoder.add(Conv2D(5, (5, 5), padding="same", input_shape=inputShape))
+        # autoencoder.add(Activation("relu"))
+        # autoencoder.add(BatchNormalization(axis=chanDim))
+        # autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 64x64
+
         # autoencoder.add(Conv2D(10, (5, 5), padding="same"))
         autoencoder.add(Conv2D(10, (5, 5), padding="same",input_shape=inputShape))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 32x32
 
+        # first set of CONV => RELU => POOL layers
         # autoencoder.add(Conv2D(20, (5, 5), padding="same",input_shape=inputShape))
         autoencoder.add(Conv2D(20, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # # second set of CONV => RELU => POOL layers
+        # 16x16
 
+        # # second set of CONV => RELU => POOL layers
         autoencoder.add(Conv2D(50, (5, 5), padding="same"))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
         autoencoder.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 8x8
+
         # first (and only) set of FC => RELU layers
         autoencoder.add(Flatten())
-
         autoencoder.add(Dense(3200))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
@@ -570,12 +723,6 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         autoencoder.add(Conv2D(1, (5, 5), use_bias=True, padding='same'))
         autoencoder.add(Activation('sigmoid'))
-
-
-
-
-
-
 
         return autoencoder
 

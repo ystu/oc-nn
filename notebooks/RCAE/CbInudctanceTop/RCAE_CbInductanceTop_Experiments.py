@@ -43,7 +43,7 @@ HIDDEN_LAYER_SIZE = 32 #32
 MODEL_SAVE_PATH = PROJECT_DIR + "/models/" + DATASET + "/RCAE/"
 REPORT_SAVE_PATH = PROJECT_DIR + "/reports/figures/" + DATASET + "/RCAE/"
 PRETRAINED_WT_PATH = ""
-PredictMode = True # load the model and predict if true
+PredictMode = False # load the model and predict if true
 
 # RANDOM_SEED = [42,56,81,67,33,25,90,77,15,11]
 RANDOM_SEED = [42]
@@ -64,7 +64,7 @@ for seed in RANDOM_SEED:
     auc_roc = rcae.predict_by_pretrain_model()
   else:
     auc_roc = rcae.fit_and_predict()
-      
+
   AUC.append(auc_roc)
   print("time cost: %d seconds\n" %(time.time() - startTime))
   

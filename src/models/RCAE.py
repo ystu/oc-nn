@@ -75,6 +75,7 @@ class RCAE_AD:
         self.pretrain= True
         self.dataset = dataset.lower()
         self.resolution = str(img_wdt) + 'x' + str(img_hgt)
+        self.worstThresholdPercent = 20;
         
         print("INFO: The dataset is ",self.dataset)
         # load dataset
@@ -408,7 +409,7 @@ class RCAE_AD:
 
 
         img = np.ndarray(shape=(side * nrows, side * ncols, channel))
-        print("img shape:", img.shape)
+        # print("img shape:", img.shape)
 
         worst_top10_keys = list(worst_top10_keys)
 
@@ -442,12 +443,12 @@ class RCAE_AD:
         if(self.dataset == "mnist"):
              # Save the image decoded
             img = np.reshape(img, (side * nrows, side * ncols))
-            print('Saving Top-200'+ str(lamda) + "most anomalous digit: @")
+            # print('Saving Top-200'+ str(lamda) + "most anomalous digit: @")
             io.imsave(self.results + str(lamda)  + 'Class_'+ str(Cfg.mnist_normal) + "_Top100.png", img)
         if(self.dataset == "cbinductancetop"):
             # Save the image decoded
             img = np.reshape(img, (side * nrows, side * ncols))
-            print('Saving Top-200' + str(lamda) + "most anomalous digit: @")
+            # print('[info] : Saving Top-100' + str(lamda) + " image: @")
             io.imsave(self.results + str(lamda) + 'Class_' + str(Cfg.cbinductancetop_normal) + "_Top100.png", img)
 
         return
@@ -464,7 +465,7 @@ class RCAE_AD:
 
         top_100_anomalies = np.asarray(top_100_anomalies)
         
-        print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
+        # print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
         self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
 
         return 
@@ -483,7 +484,7 @@ class RCAE_AD:
 
         top_100_anomalies = np.asarray(top_100_anomalies)
         
-        print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
+        # print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
         self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
 
         return 
@@ -516,17 +517,13 @@ class RCAE_AD:
         self.nn_model.visualise_anamolies_detected_for_test_data(X_test, X_test, decoded, 0, best_top10_keys,
                                                                  worst_top10_keys, lamda)
         # end by sam
+
         if (self.dataset == "cbinductancetop"):
             decoded = np.reshape(decoded, (len(decoded), self.IMG_WDT * self.IMG_HGT))
             X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
         # calculate accuracy result
-        worstThresholdPercent = 30
-        worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
-        thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent / 100)
-        anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
-        print("anomaly_threshold = %.4f" % anomaly_threshold)
-        calculateAccuracy(anamolies_dict, y_test, anomaly_threshold)
+        calculateAccuracy(anamolies_dict, y_test, self.worstThresholdPercent)
 
         # roc curve
         TRIALS = 4
@@ -541,7 +538,6 @@ class RCAE_AD:
         df = pd.DataFrame(recErr)
         df.to_csv(self.results + "recErr.csv")
 
-        print("=====================")
         print("AUROC", lamda, auc[0])
         auc_roc = auc[0]
         print("=======================")
@@ -687,7 +683,7 @@ class RCAE_AD:
                 X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
             # calculate accuracy result
-            calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold)
+            calculateAccuracy(anamolies_dict, y_test, self.worstThresholdPercent)
 
             # roc curve
             recErr = ((decoded - X_test_for_roc) ** 2).sum(axis=1)
@@ -768,11 +764,15 @@ def debug_visualise_anamolies_detected(testX, noisytestX, decoded, N, best_top10
 
         return
 
-def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
+def calculateAccuracy(anamolies_dict, y_test, worstThresholdPercent):
     if len(anamolies_dict) != len(y_test):
         print("[calculateAccuracy] size different!!!")
         return
 
+    worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
+    thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent / 100)
+    anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
+    print("anomaly_threshold = %.4f" % anomaly_threshold)
     total_size = len(anamolies_dict)
     anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
     tp = 0
@@ -795,9 +795,9 @@ def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
                 fn += 1 # guess wrong
 
     print("======================================")
-    print("tp (success kill#): %d" %tp)
-    print("fp (over kill#): %d" %fp)
-    print("fn (under kill#): %d" %fn)
+    print("tp (success kill #): %d" %tp)
+    print("fp (over kill #): %d" %fp)
+    print("fn (under kill #): %d" %fn)
     print("tn (ok product #) %d" %tn)
     print()
     print("accuracy: %d %%" %((tp + tn) / total_size * 100))
