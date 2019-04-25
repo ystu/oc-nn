@@ -35,16 +35,15 @@ from src.config import Configuration as Cfg
 import time
 
 DATASET = "CbInductanceTop"
-IMG_HGT = 64 # 960  480  240  28
-IMG_WDT= 64 # 1280  640  320  28
+IMG_HGT = 64 # 960  480  240  128 64 28
+IMG_WDT= 64 # 1280  640  320  128 64 28
 IMG_DIM = IMG_HGT * IMG_WDT
 IMG_CHANNEL = 1
 HIDDEN_LAYER_SIZE = 32 #32
-MODEL_SAVE_PATH = PROJECT_DIR + "/models/CbInductanceTop/RCAE/"
-REPORT_SAVE_PATH = PROJECT_DIR + "/reports/figures/CbInductanceTop/RCAE/"
+MODEL_SAVE_PATH = PROJECT_DIR + "/models/" + DATASET + "/RCAE/"
+REPORT_SAVE_PATH = PROJECT_DIR + "/reports/figures/" + DATASET + "/RCAE/"
 PRETRAINED_WT_PATH = ""
-TRAIN_PATH = "train/"
-TEST_PATH = "test/"
+PredictMode = True # load the model and predict if true
 
 # RANDOM_SEED = [42,56,81,67,33,25,90,77,15,11]
 RANDOM_SEED = [42]
@@ -53,7 +52,7 @@ AUC = []
 for seed in RANDOM_SEED:
   startTime = time.time()
   Cfg.seed = seed
-  rcae = RCAE_AD(DATASET,IMG_DIM, HIDDEN_LAYER_SIZE, IMG_HGT, IMG_WDT,IMG_CHANNEL, MODEL_SAVE_PATH, REPORT_SAVE_PATH,PRETRAINED_WT_PATH,seed, TRAIN_PATH, TEST_PATH)
+  rcae = RCAE_AD(DATASET,IMG_DIM, HIDDEN_LAYER_SIZE, IMG_HGT, IMG_WDT,IMG_CHANNEL, MODEL_SAVE_PATH, REPORT_SAVE_PATH,PRETRAINED_WT_PATH,seed)
   print("Train Data Shape: ",rcae.data._X_train.shape)
   print("Train Label Shape: ",rcae.data._y_train.shape)
   print("Validation Data Shape: ",rcae.data._X_val.shape)
@@ -61,7 +60,10 @@ for seed in RANDOM_SEED:
   print("Test Data Shape: ",rcae.data._X_test.shape)
   print("Test Label Shape: ",rcae.data._y_test.shape)
   print("===========TRAINING AND PREDICTING WITH DCAE============================")
-  auc_roc = rcae.fit_and_predict()
+  if(PredictMode):
+    auc_roc = rcae.predict_by_pretrain_model()
+  else:
+    auc_roc = rcae.fit_and_predict()
   print("========================================================================")
   AUC.append(auc_roc)
   print("time cost: %d seconds\n" %(time.time() - startTime))

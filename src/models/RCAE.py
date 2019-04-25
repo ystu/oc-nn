@@ -16,6 +16,7 @@ sess = tf.Session()
 
 
 from keras import backend as K
+from keras.models import model_from_json
 K.tensorflow_backend._get_available_gpus()
 gpu_options = tf.GPUOptions(allow_growth=True)
 sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -24,6 +25,7 @@ tf.keras.backend.set_session(sess)
 K.set_session(sess)
 
 import numpy as np
+import json
 
 from src.data.main import load_dataset
 
@@ -34,7 +36,10 @@ def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
     if len(anamolies_dict) != len(y_test):
         print("[calculateAccuracy] size different!!!")
         return
-
+    worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
+    worstThresholdPercent = 0.2
+    thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent)
+    anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
     print("anomaly_threshold = %.4f" % anomaly_threshold)
     total_size = len(anamolies_dict)
     anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
@@ -44,7 +49,7 @@ def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
     tn = 0
     for i in range(0, total_size, 1):
         difference = anamolies_list[i][1] - anomaly_threshold
-        print("anamolies_list[i][1] = %.4f" % anamolies_list[i][1])
+        # print("anamolies_list[i][1] = %.4f" % anamolies_list[i][1])
         if difference > 0: # predict ng
             if y_test[i] == 1:
                 tp += 1 # guess correct
@@ -57,15 +62,17 @@ def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold):
                 fn += 1 # guess wrong
 
     print("======================================")
-    print("tp: %d" %tp)
-    print("fp: %d" %fp)
-    print("fn: %d" %fn)
-    print("tn: %d" %tn)
-    print("accuracy: %.2f" %((tp + tn) / total_size))
-    print("recall: %.2f" % (tp / (tp + fn)))
-    print("precision: %.2f" % (tp / (tp + fp)))
+    print("tp (success kill#): %d" %tp)
+    print("fp (over kill#): %d" %fp)
+    print("fn (under kill#): %d" %fn)
+    print("tn (ok product #) %d" %tn)
+    print()
+    print("accuracy: %d %%" %((tp + tn) / total_size * 100))
+    print("underKill: %d %%" % (fn / (total_size) * 100))
+    print("overKill: %d %%" % (fp / (total_size) * 100))
+    print("recall: %d %%" % (tp / (tp + fn) * 100))
+    print("precision: %d %%" % (tp / (tp + fp) * 100))
     print("======================================")
-
 
 class RCAE_AD:
     ## Initialise static variables
@@ -119,7 +126,7 @@ class RCAE_AD:
             from src.data.cbinductancetop import CbInudctanceTop_DataLoader
             # Create the robust cae for the dataset passed
             self.nn_model = CbInudctanceTop_DataLoader(img_hgt, img_wdt, self.resolution)
-            self.mnist_savedModelPath = PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
+            self.cbinductancetop_savedModelPath = PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
 
         if (dataset.lower() == "mnist"):
             from src.data.mnist import MNIST_DataLoader
@@ -146,16 +153,32 @@ class RCAE_AD:
 
         ## save the model
         # serialize model to JSON
-        if(RCAE_AD.DATASET == "mnist"):
-            model_json = model.to_json()
-            with open(self.mnist_savedModelPath +lambdaval+ "__DCAE_DIGIT__"+str(Cfg.mnist_normal)+"__model.json", "w") as json_file:
-                json_file.write(model_json)
+        if(RCAE_AD.DATASET == "mnist" or RCAE_AD.DATASET == "CbInductanceTop"):
+            fileName = self.cbinductancetop_savedModelPath + lambdaval + "__" + str(Cfg.cbinductancetop_normal) + "__model"
+            # model_json = model.to_json()
+            # with open(fileName + ".json", "w") as json_file:
+            #     json_file.write(model_json)
             # serialize weights to HDF5
-            model.save_weights(self.mnist_savedModelPath + lambdaval+"__DCAE_DIGIT__"+str(Cfg.mnist_normal)+"__model.h5")
+            model.save_weights(fileName + ".h5")
             print("Saved model to disk....")
-
-
         return
+
+    def load_model(self, model, lambdaval):
+        fileName = self.cbinductancetop_savedModelPath + lambdaval + "__" + str(Cfg.cbinductancetop_normal) + "__model"
+        model.load_weights(fileName + ".h5")
+        # if (RCAE_AD.DATASET == "CbInductanceTop"):
+        #     # check whether file exist
+        #     # load model by json
+        #     with open(fileName + ".json", "r") as json_file:
+        #         print(json_file.read())
+        #         # json_string = json.load(json_file)
+        #         # model = model_from_json(json.dumps(json_string))
+        #         model = model_from_json(json.dumps(json_file.read()))
+        print("Loaded model from disk....")
+        return
+
+
+
 
     def computePred_Labels(self, X_test,decoded,poslabelBoundary,negBoundary,lamda):
 
@@ -452,7 +475,7 @@ class RCAE_AD:
         # # Save the image decoded
         # print('Saving Top-200'+ str(lamda) + "most anomalous digit: @")
         # io.imsave(self.results + str(lamda)  + 'Class_'+ str(Cfg.cifar10_normal) + "_Top100.png", img)
-        
+
         if(self.dataset == "cifar10"):
              # Save the image decoded
             print('Saving Top-200'+ str(lamda) + "most anomalous digit: @")
@@ -483,7 +506,7 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
+        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_normal")
 
         return 
     
@@ -502,14 +525,66 @@ class RCAE_AD:
         top_100_anomalies = np.asarray(top_100_anomalies)
         
         print("[INFO:] The  top_100_anomalies",top_100_anomalies.shape)
-        # self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
+        self.tile_raster_visualise_anamolies_detected(X_test,worst_sorted_keys,"most_anomalous")
 
         return 
 
-    def fit_and_predict(self):
+    def predict_by_pretrain_model(self):
+        # load model
+        lamda = 0.0
+        self.load_model(self.nn_model.cae, str(lamda))
 
-      
-        
+        # predict
+        if (self.dataset == "cbinductancetop"):
+            # X_train, y_train = self.get_oneClass_trainData()
+            # testing data
+            # X_test, y_test = self.get_oneClass_testData()
+            X_train = self.data._X_train
+            y_train = self.data._y_train
+
+            X_test = self.data._X_test
+            y_test = self.data._y_test
+
+        # decoded test data
+        decoded = self.nn_model.cae.predict(X_test)
+        XPred = decoded
+
+        # start by sam
+        [best_top10_keys, worst_top10_keys, anamolies_dict] = self.nn_model.compute_best_worst_rank(X_test, decoded)
+
+        # self.nn_model.compute_softhreshold(X_test, 0, lamda, X_test)
+        # N = self.nn_model.Noise
+        self.nn_model.visualise_anamolies_detected_for_test_data(X_test, X_test, decoded, 0, best_top10_keys,
+                                                                 worst_top10_keys, lamda)
+        # end by sam
+        if (self.dataset == "cbinductancetop"):
+            decoded = np.reshape(decoded, (len(decoded), self.IMG_WDT * self.IMG_HGT))
+            X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
+
+        # calculate accuracy result
+        calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold)
+
+        # roc curve
+        TRIALS = 4
+        auc = np.zeros((TRIALS,))
+        recErr = ((decoded - X_test_for_roc) ** 2).sum(axis=1)
+
+        self.save_Most_Anomalous(X_test, recErr)
+        self.save_Most_Normal(X_test, recErr)
+        auc[0] = roc_auc_score(y_test, recErr)
+
+        import pandas as pd
+        df = pd.DataFrame(recErr)
+        df.to_csv(self.results + "recErr.csv")
+
+        print("=====================")
+        print("AUROC", lamda, auc[0])
+        auc_roc = auc[0]
+        print("=======================")
+
+        return auc_roc
+
+    def fit_and_predict(self):
         if(self.dataset == "cifar10"):
             X_train = self.data._X_train
             y_train = self.data._y_train
@@ -600,23 +675,25 @@ class RCAE_AD:
             # Capture the structural Noise
             self.nn_model.compute_softhreshold(XTrue, N, lamda, XTrue)
             N = self.nn_model.Noise
+
+            self.save_model(self.nn_model.cae, str(lamda))
             
 
             # decode train data
             decoded = self.nn_model.cae.predict(XTrue)
             # rank the best and worst reconstructed images
-            [best_top10_keys, worst_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(XTrue, decoded)
+            # [best_top10_keys, worst_top10_keys, worst_top10_keys] = self.nn_model.compute_best_worst_rank(XTrue, decoded)
 
             # self.nn_model.visualise_anamolies_detected(XTrue, XTrue, decoded, N, best_top10_keys, worst_top10_keys, lamda)
 
-            
-            
-            
+
+
+
             # compute MeanSqared error metric
             # self.nn_model.compute_mse(X_test, decoded, lamda)
             # print("[INFO:] The anomaly threshold computed is ", self.nn_model.anomaly_threshold)
 
-            
+
             # decoded test data
             decoded = self.nn_model.cae.predict(X_test)
             XPred = decoded
@@ -646,11 +723,6 @@ class RCAE_AD:
                 X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
             # calculate accuracy result
-
-            # ae_output = self.cae.predict(X_test)
-            # ae_output = np.reshape(ae_output, (len(ae_output), self.IMG_WDT * self.IMG_HGT))
-            # X_test_for_verify = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
-            # test_data_mse = mean_squared_error(X_test_for_verify, ae_output)
             calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold)
 
             # roc curve
@@ -668,8 +740,6 @@ class RCAE_AD:
             print("AUROC", lamda, auc[l])
             auc_roc = auc[l]
             print("=======================")
-            
-            self.save_model(self.nn_model.cae,str(lamda))
 
 
         return auc_roc
