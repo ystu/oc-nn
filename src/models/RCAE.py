@@ -775,6 +775,8 @@ def calculateAccuracy(anamolies_dict, y_test, worstThresholdPercent):
     print("anomaly_threshold = %.4f" % anomaly_threshold)
     total_size = len(anamolies_dict)
     anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
+    listFp = []
+    listFn = []
     tp = 0
     fp = 0
     fn = 0
@@ -788,12 +790,17 @@ def calculateAccuracy(anamolies_dict, y_test, worstThresholdPercent):
                 tp += 1 # guess correct
             else: # predict ok
                 fp += 1 # guess wrong
+                listFp.append(anamolies_list[i])
         else: # difference < 0 , predict ok
             if y_test[i] == 0:
                 tn += 1 # guess correct
             else: # predict ok
                 fn += 1 # guess wrong
-
+                listFn.append(anamolies_list[i])
+    print("listFp")
+    print(listFp)
+    print("listFn")
+    print(listFn)
     print("======================================")
     print("tp (success kill #): %d" %tp)
     print("fp (over kill #): %d" %fp)

@@ -77,8 +77,8 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         self.seed = Cfg.seed
 
-        self.encodeLayerU = 28
-        self.decodeLayerV = 30
+        self.encodeU = 28 # 28
+        self.decodeV = 30 # 30
 
         if Cfg.ad_experiment:
             self.n_classes = 2
@@ -283,12 +283,10 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
 
     def custom_rcae_loss(self):
-
-
-        U = self.cae.layers[self.encodeLayerU].get_weights()
+        U = self.cae.layers[self.encodeU].get_weights()
         U = U[0]
 
-        V = self.cae.layers[self.decodeLayerV].get_weights()
+        V = self.cae.layers[self.decodeV].get_weights()
         V = V[0]
         V = np.transpose(V)
         N = self.Noise
@@ -322,6 +320,11 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         return custom_rcae
 
+
+    def l2_loss(self):
+        def my_loss(y_true, y_pred):
+            return keras.losses.mean_squared_error(y_true, (y_pred))
+        return my_loss
 
     def encoder(self,input_img):
         # encoder
@@ -577,7 +580,6 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(BatchNormalization(axis=chanDim))
 
         autoencoder.add(Dense(2048))
-        # autoencoder.add(Dense(2450))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
@@ -634,9 +636,44 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # 64x64x1
 
         # autoencoder.add(Conv2D(1, (4, 4), use_bias=True, padding='same'))
-        autoencoder.add(Activation('sigmoid'))
+        autoencoder.add(Activation('sigmoid')) #68
 
         return autoencoder
+
+    def build_autoencoder_Sam(self, height, width):
+        input_img = Input(shape=(width, height, 1))  # adapt this if using `channels_first` image data format
+
+        # Encode-----------------------------------------------------------
+        x = Conv2D(32, (4, 4), strides=2, activation='relu', padding='same')(input_img)
+        x = Conv2D(32, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = Conv2D(32, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = Conv2D(64, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = Conv2D(64, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = Conv2D(128, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = Conv2D(64, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = Conv2D(32, (3, 3), strides=1, activation='relu', padding='same')(x)
+        encoded = Conv2D(1, (8, 8), strides=1, padding='same')(x)
+
+        # Decode---------------------------------------------------------------------
+        x = Conv2D(32, (3, 3), strides=1, activation='relu', padding='same')(encoded)
+        x = Conv2D(64, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2D(128, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2D(64, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2D(64, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), strides=1, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2D(32, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = UpSampling2D((4, 4))(x)
+        x = Conv2D(32, (4, 4), strides=2, activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        decoded = Conv2D(1, (8, 8), activation='sigmoid', padding='same')(x)
+        # ---------------------------------------------------------------------
+
+        return Model(input_img, decoded)
 
     # Build lenet style autoencoder
     def build_autoencoder_origin(self, height, width):
@@ -687,7 +724,6 @@ class CbInudctanceTop_DataLoader(DataLoader):
         autoencoder.add(BatchNormalization(axis=chanDim))
 
         autoencoder.add(Dense(3200))
-        # autoencoder.add(Dense(2450))
         autoencoder.add(Activation("relu"))
         autoencoder.add(BatchNormalization(axis=chanDim))
 
@@ -858,6 +894,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         # opt = SGD(lr=0.01, decay=0.01 / 150, momentum=0.9, nesterov=True)
         opt = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         # opt =RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+        # self.cae.compile(loss=self.l2_loss(), optimizer=opt)
         self.cae.compile(loss=self.custom_rcae_loss(), optimizer=opt)
 
         self.lamda[0] = lamda
