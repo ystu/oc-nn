@@ -46,7 +46,7 @@ PRETRAINED_WT_PATH = ""
 PredictMode = False # load the model and predict if true
 
 # RANDOM_SEED = [42,56,81,67,33,25,90,77,15,11]
-RANDOM_SEED = [58]
+RANDOM_SEED = [81]
 AUC = []
 
 for seed in RANDOM_SEED:
