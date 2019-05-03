@@ -29,10 +29,6 @@ import json
 
 from src.data.main import load_dataset
 
-PROJECT_DIR = "/home/ubuntu-ai/anomaly_detection/oc-nn"
-
-
-
 class RCAE_AD:
     ## Initialise static variables
     INPUT_DIM = 0
@@ -40,10 +36,11 @@ class RCAE_AD:
     DATASET = "mnist"
     mean_square_error_dict = {}
     RESULT_PATH = ""
+    PROJECT_DIR = ""
 
     def __init__(self, dataset, inputdim, hiddenLayerSize, img_hgt, img_wdt,img_channel, modelSavePath, reportSavePath,
-                 preTrainedWtPath, seed, intValue=0, stringParam="defaultValue",
-                 otherParam=None, ):
+                 preTrainedWtPath, seed, project_dir, intValue=0, stringParam="defaultValue",
+                 otherParam=None):
         """
         Called when initializing the classifier
         """
@@ -52,6 +49,7 @@ class RCAE_AD:
         RCAE_AD.HIDDEN_SIZE = hiddenLayerSize
         RCAE_AD.RESULT_PATH = reportSavePath
         RCAE_AD.RANDOM_SEED = seed
+        RCAE_AD.PROJECT_DIR = project_dir
 
         print("RCAE.RESULT_PATH:",RCAE_AD.RESULT_PATH)
         self.intValue = intValue
@@ -76,7 +74,7 @@ class RCAE_AD:
         self.dataset = dataset.lower()
         self.resolution = str(img_wdt) + 'x' + str(img_hgt)
         self.worstThresholdPercent = 20;
-        
+
         print("INFO: The dataset is ",self.dataset)
         # load dataset
         load_dataset(self, dataset.lower(), self.pretrain)
@@ -86,13 +84,13 @@ class RCAE_AD:
             from src.data.cbinductancetop import CbInudctanceTop_DataLoader
             # Create the robust cae for the dataset passed
             self.nn_model = CbInudctanceTop_DataLoader(img_hgt, img_wdt, self.resolution)
-            self.cbinductancetop_savedModelPath = PROJECT_DIR+"/models/CbInductanceTop/RCAE/"
+            self.cbinductancetop_savedModelPath = RCAE_AD.PROJECT_DIR +"/models/CbInductanceTop/RCAE/"
 
         if (dataset.lower() == "mnist"):
             from src.data.mnist import MNIST_DataLoader
             # Create the robust cae for the dataset passed
             self.nn_model = MNIST_DataLoader()
-            self.mnist_savedModelPath = PROJECT_DIR+"/models/MNIST/RCAE/"
+            self.mnist_savedModelPath = RCAE_AD.PROJECT_DIR +"/models/MNIST/RCAE/"
 
 
         # Depending on the dataset build respective autoencoder architecture
@@ -154,7 +152,7 @@ class RCAE_AD:
         
        
         worstreconstructed_Top200index = worst_sorted_keys[0:200]
-        print("[INFO:] The worstreconstructed_Top200index index are ",worstreconstructed_Top200index)
+        print("[INFO:] The worstreconstructed_Top200 index index are ",worstreconstructed_Top200index)
         
         
         
@@ -523,7 +521,8 @@ class RCAE_AD:
             X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
         # calculate accuracy result
-        calculateAccuracy(anamolies_dict, y_test, self.worstThresholdPercent)
+        # calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold, self.worstThresholdPercent)
+        calculateAccuracy(anamolies_dict, y_test, 0, self.worstThresholdPercent)
 
         # roc curve
         TRIALS = 4
@@ -683,7 +682,7 @@ class RCAE_AD:
                 X_test_for_roc = np.reshape(X_test, (len(X_test), self.IMG_WDT * self.IMG_HGT))
 
             # calculate accuracy result
-            calculateAccuracy(anamolies_dict, y_test, self.worstThresholdPercent)
+            calculateAccuracy(anamolies_dict, y_test, self.nn_model.anomaly_threshold, self.worstThresholdPercent)
 
             # roc curve
             recErr = ((decoded - X_test_for_roc) ** 2).sum(axis=1)
@@ -764,14 +763,15 @@ def debug_visualise_anamolies_detected(testX, noisytestX, decoded, N, best_top10
 
         return
 
-def calculateAccuracy(anamolies_dict, y_test, worstThresholdPercent):
+def calculateAccuracy(anamolies_dict, y_test, anomaly_threshold, worstThresholdPercent):
     if len(anamolies_dict) != len(y_test):
         print("[calculateAccuracy] size different!!!")
         return
+    if(anomaly_threshold == 0):
+        worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
+        thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent / 100)
+        anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
 
-    worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
-    thresholdIndex = int(len(worst_sorted_keys) * worstThresholdPercent / 100)
-    anomaly_threshold = anamolies_dict[worst_sorted_keys[thresholdIndex]]
     print("anomaly_threshold = %.4f" % anomaly_threshold)
     total_size = len(anamolies_dict)
     anamolies_list = [(key, value) for key, value in anamolies_dict.items()]
@@ -797,10 +797,10 @@ def calculateAccuracy(anamolies_dict, y_test, worstThresholdPercent):
             else: # predict ok
                 fn += 1 # guess wrong
                 listFn.append(anamolies_list[i])
-    print("listFp")
-    print(listFp)
-    print("listFn")
-    print(listFn)
+    # print("listFp")
+    # print(listFp)
+    # print("listFn")
+    # print(listFn)
     print("======================================")
     print("tp (success kill #): %d" %tp)
     print("fp (over kill #): %d" %fp)

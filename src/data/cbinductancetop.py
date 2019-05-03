@@ -87,13 +87,13 @@ class CbInudctanceTop_DataLoader(DataLoader):
 
         Cfg.n_batches = int(np.ceil(self.n_train * 1. / Cfg.batch_size))
 
-        self.data_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/data/CbInductanceTop/"
+        self.data_path = "/home/ubuntu-ai/github/oc-nn/data/CbInductanceTop/"
 
         self.on_memory = True
         Cfg.store_on_gpu = True
         # print("Inside the MNIST_DataLoader RCAE.RESULT_PATH:", RCAE_AD.RESULT_PATH)
-        self.rcae_results = "/home/ubuntu-ai/anomaly_detection/oc-nn/reports/figures/CbInductanceTop/RCAE/"
-        self.modelsave_path = "/home/ubuntu-ai/anomaly_detection/oc-nn/models/CbInductanceTop/RCAE/"
+        self.rcae_results = "/home/ubuntu-ai/github/oc-nn/reports/figures/CbInductanceTop/RCAE/"
+        self.modelsave_path = "/home/ubuntu-ai/github/oc-nn/models/CbInductanceTop/RCAE/"
 
         print("Inside the CbInductanceTop_DataLoader RCAE.RESULT_PATH:", self.rcae_results)
 
@@ -847,6 +847,10 @@ class CbInudctanceTop_DataLoader(DataLoader):
         worst_top10_anamolies_dict = {}
         worst_sorted_keys = sorted(anamolies_dict, key=anamolies_dict.get, reverse=True)
 
+        print("worst score descending")
+        for k in worst_sorted_keys:
+            print(anamolies_dict[k], end="\t")
+
 
 
         # Picking the top 10 images that were not reconstructed properly or badly reconstructed
@@ -928,7 +932,7 @@ class CbInudctanceTop_DataLoader(DataLoader):
         #      norm.append(np.linalg.norm(input[i] - ae_output[i]))
         # np_norm = np.asarray(norm)
 
-        self.anomaly_threshold = np_mean_mse
+        self.anomaly_threshold = np_mean_mse * 2 # need to enhance
 
 
         return ae_output
